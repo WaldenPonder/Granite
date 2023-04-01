@@ -204,5 +204,5 @@ These are pulled in as submodules.
 - MikkTSpace (inlined into `third_party/mikktspace`)
 
 test1
-test2
+test2wang
 test3
