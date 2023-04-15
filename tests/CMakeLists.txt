@@ -42,6 +42,17 @@ if (NOT ANDROID)
     target_compile_definitions(hdr-test PRIVATE ASSET_DIRECTORY=\"${CMAKE_CURRENT_SOURCE_DIR}/assets\")
 endif()
 
+add_granite_application(test-gpu-dirven-pipeline gpu-dirven-pipeline.cpp 
+ tiny_obj_loader.h read_json_file.h 
+read_json_file.cpp )
+target_include_directories(test-gpu-dirven-pipeline
+        PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/rapidjson/include)
+if (NOT ANDROID)
+    target_compile_definitions(test-gpu-dirven-pipeline PRIVATE ASSET_DIRECTORY=\"${CMAKE_CURRENT_SOURCE_DIR}/assets\")
+endif()
+
 add_granite_application(multi-draw-indirect multi_draw_indirect.cpp)
 if (NOT ANDROID)
     target_compile_definitions(multi-draw-indirect PRIVATE ASSET_DIRECTORY=\"${CMAKE_CURRENT_SOURCE_DIR}/assets\")

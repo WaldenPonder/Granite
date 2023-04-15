@@ -39,6 +39,7 @@
 #include "lights/deferred_lights.hpp"
 #include "lights/volumetric_diffuse.hpp"
 #include "camera_export.hpp"
+#include "Trackball.h"
 #include "post/aa.hpp"
 #include "post/temporal.hpp"
 
@@ -77,7 +78,7 @@ protected:
 	FlatRenderer flat_renderer;
 	LightingParameters lighting;
 	LightingParameters fallback_lighting;
-	FPSCamera cam;
+	Trackball cam;
 	SceneLoader scene_loader;
 	std::unique_ptr<AnimationSystem> animation_system;
 

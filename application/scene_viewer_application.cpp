@@ -350,7 +350,8 @@ SceneViewerApplication::SceneViewerApplication(const std::string &path, const st
 		auto dome = Util::make_handle<Skybox>();
 		scene_loader.get_scene().create_renderable(dome, nullptr);
 	}
-
+	
+	cam.set_scene(&scene_loader.get_scene());
 	auto *environment = scene_loader.get_scene().get_environment();
 	if (environment)
 		lighting.fog = environment->fog;

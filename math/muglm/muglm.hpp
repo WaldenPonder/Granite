@@ -172,7 +172,32 @@ struct tvec3
 	{
 		return data[index];
 	}
+	inline tvec3 &operator*=(const tvec3 &rhs)
+	{
+		data[0] *= rhs.data[0];
+		data[1] *= rhs.data[1];
+		data[2] *= rhs.data[2];
+		return *this;
+	}
 
+	inline tvec3 &operator/=(T rhs)
+	{
+		if constexpr (std::is_floating_point_v<T>)
+		{
+			T inv = static_cast<T>(1.0) / rhs;
+			data[0] *= inv;
+			data[1] *= inv;
+			data[2] *= inv;
+		}
+		else
+		{
+			data[0] /= rhs;
+			data[1] /= rhs;
+			data[2] /= rhs;
+		}
+		return *this;
+	}
+	
 	inline tvec2<T> xx() const;
 	inline tvec2<T> xy() const;
 	inline tvec2<T> xz() const;

@@ -47,6 +47,23 @@ quat look_at_arbitrary_up(vec3 direction);
 
 quat rotate_vector_axis(vec3 from, vec3 to, vec3 axis);
 
+template <typename T>
+tmat4<T> rotate(T angle_radians, T x, T y, T z)
+{
+	const T c = std::cos(angle_radians);
+	const T s = std::sin(angle_radians);
+	const T one_minus_c = 1 - c;
+	return tmat4<T>(x * x * one_minus_c + c, y * x * one_minus_c + z * s, x * z * one_minus_c - y * s, 0,
+	                x * y * one_minus_c - z * s, y * y * one_minus_c + c, y * z * one_minus_c + x * s, 0,
+	                x * z * one_minus_c + y * s, y * z * one_minus_c - x * s, z * z * one_minus_c + c, 0, 0, 0, 0, 1);
+}
+
+template <typename T>
+tmat4<T> rotate(T angle_radians, const tvec3<T> &v)
+{
+	return rotate(angle_radians, v.value[0], v.value[1], v.value[2]);
+}
+
 mat4 projection(float fovy, float aspect, float znear, float zfar);
 
 mat4 ortho(const AABB &aabb);

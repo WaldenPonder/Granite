@@ -80,6 +80,7 @@ public:
 class TouchDownEvent;
 class TouchUpEvent;
 class MouseMoveEvent;
+class ScrollEvent;
 class KeyboardEvent;
 class OrientationEvent;
 class TouchGestureEvent;
@@ -96,6 +97,7 @@ public:
 	virtual bool filter_input_event(const TouchDownEvent &e) = 0;
 	virtual bool filter_input_event(const TouchUpEvent &e) = 0;
 	virtual bool filter_input_event(const MouseMoveEvent &e) = 0;
+	virtual bool filter_input_event(const ScrollEvent &e) = 0;
 	virtual bool filter_input_event(const KeyboardEvent &e) = 0;
 	virtual bool filter_input_event(const OrientationEvent &e) = 0;
 	virtual bool filter_input_event(const TouchGestureEvent &e) = 0;

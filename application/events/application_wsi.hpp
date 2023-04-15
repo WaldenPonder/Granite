@@ -56,6 +56,7 @@ private:
 	void dispatch(const TouchGestureEvent &e) override;
 	void dispatch(const JoypadButtonEvent &e) override;
 	void dispatch(const JoypadAxisEvent &e) override;
+	void dispatch(const ScrollEvent &e) override;
 	void dispatch(const KeyboardEvent &e) override;
 	void dispatch(const OrientationEvent &e) override;
 	void dispatch(const MouseButtonEvent &e) override;

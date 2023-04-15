@@ -2815,6 +2815,7 @@ void Device::PerFrame::begin()
 
 	if (!allocations.empty())
 	{
+		//wq 真正释放内存的地方
 		std::lock_guard<std::mutex> holder{device.lock.memory_lock};
 		for (auto &alloc : allocations)
 			alloc.free_immediate(managers.memory);

@@ -135,6 +135,7 @@ void debug_mesh_render(CommandBuffer &cmd, const RenderQueueData *infos, unsigne
 	cmd.draw(count);
 }
 
+//wq draw mesh here
 void static_mesh_render(CommandBuffer &cmd, const RenderQueueData *infos, unsigned instances)
 {
 	auto *info = static_cast<const StaticMeshInfo *>(infos->render_info);

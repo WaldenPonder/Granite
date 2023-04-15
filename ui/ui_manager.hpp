@@ -75,6 +75,7 @@ private:
 	bool filter_input_event(const TouchDownEvent &e) override;
 	bool filter_input_event(const TouchUpEvent &e) override;
 	bool filter_input_event(const MouseMoveEvent &e) override;
+	bool filter_input_event(const ScrollEvent &e) override;
 	bool filter_input_event(const KeyboardEvent &e) override;
 	bool filter_input_event(const OrientationEvent &e) override;
 	bool filter_input_event(const TouchGestureEvent &e) override;

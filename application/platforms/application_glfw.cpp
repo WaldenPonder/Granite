@@ -50,6 +50,7 @@ using namespace Vulkan;
 namespace Granite
 {
 static void fb_size_cb(GLFWwindow *window, int width, int height);
+static void scroll_cb(GLFWwindow *window, double xoffset, double yoffset);
 static void key_cb(GLFWwindow *window, int key, int, int action, int);
 static void button_cb(GLFWwindow *window, int button, int action, int);
 static void cursor_cb(GLFWwindow *window, double x, double y);
@@ -112,6 +113,7 @@ public:
 		glfwSetFramebufferSizeCallback(window, fb_size_cb);
 		glfwSetKeyCallback(window, key_cb);
 		glfwSetMouseButtonCallback(window, button_cb);
+		glfwSetScrollCallback(window, scroll_cb);
 		glfwSetCursorPosCallback(window, cursor_cb);
 		glfwSetCursorEnterCallback(window, enter_cb);
 		glfwSetWindowCloseCallback(window, close_cb);
@@ -556,6 +558,12 @@ static Key glfw_key_to_granite(int key)
 		return Key::Unknown;
 	}
 #undef k
+}
+
+static void scroll_cb(GLFWwindow *window, double xoffset, double yoffset)
+{
+	auto *glfw = static_cast<WSIPlatformGLFW *>(glfwGetWindowUserPointer(window));
+	glfw->push_task_to_async_thread([=]() { glfw->get_input_tracker().scroll_event(xoffset, yoffset); });
 }
 
 static void key_cb(GLFWwindow *window, int key, int, int action, int mods)

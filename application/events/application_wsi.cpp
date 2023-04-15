@@ -122,6 +122,11 @@ void GraniteWSIPlatform::dispatch(const JoypadAxisEvent &e)
 	dispatch_template_filter(e);
 }
 
+void GraniteWSIPlatform::dispatch(const ScrollEvent &e)
+{
+	dispatch_template_filter(e);
+}
+
 void GraniteWSIPlatform::dispatch(const KeyboardEvent &e)
 {
 	dispatch_template_filter(e);

@@ -181,6 +181,7 @@ class InputTrackerHandler;
 class InputTracker
 {
 public:
+	void scroll_event(double xoffset, double yoffset);
 	void key_event(Key key, KeyState state);
 	void mouse_button_event(MouseButton button, double x, double y, bool pressed);
 	void mouse_button_event(MouseButton button, bool pressed);
@@ -498,6 +499,31 @@ private:
 	float value;
 };
 
+class ScrollEvent : public Event
+{
+public:
+	GRANITE_EVENT_TYPE_DECL(ScrollEvent)
+
+	ScrollEvent(double xoffset_, double yoffset_)
+	    : xoffset(xoffset_)
+	    , yoffset(yoffset_)
+	{
+	}
+
+	double get_xoffset() const
+	{
+		return xoffset;
+	}
+	double get_yoffset() const
+	{
+		return yoffset;
+	}
+
+private:
+	double xoffset;
+	double yoffset;
+};
+
 class KeyboardEvent : public Granite::Event
 {
 public:
@@ -727,6 +753,7 @@ public:
 	virtual void dispatch(const TouchGestureEvent &e) = 0;
 	virtual void dispatch(const JoypadButtonEvent &e) = 0;
 	virtual void dispatch(const JoypadAxisEvent &e) = 0;
+	virtual void dispatch(const ScrollEvent &e) = 0;
 	virtual void dispatch(const KeyboardEvent &e) = 0;
 	virtual void dispatch(const OrientationEvent &e) = 0;
 	virtual void dispatch(const MouseButtonEvent &e) = 0;

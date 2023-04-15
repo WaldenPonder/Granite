@@ -183,6 +183,11 @@ bool UIManager::filter_input_event(const MouseMoveEvent &e)
 		return true;
 }
 
+bool UIManager::filter_input_event(const ScrollEvent &e)
+{
+	return true;
+}
+
 bool UIManager::filter_input_event(const JoypadButtonEvent &)
 {
 	return true;

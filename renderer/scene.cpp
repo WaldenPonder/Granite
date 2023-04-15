@@ -65,6 +65,7 @@ Scene::~Scene()
 	destroy_entities(queued_entities);
 }
 
+//wq ËÑ¼¯¿É¼ûrenderable
 template <typename T, typename Func>
 static void gather_visible_renderables(const Frustum &frustum, VisibilityList &list, const T &objects,
                                        size_t begin_index, size_t end_index, const Func &filter_func)

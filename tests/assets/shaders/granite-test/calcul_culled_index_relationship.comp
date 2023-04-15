@@ -1,0 +1,35 @@
+#version 450
+#include "util.h"
+
+layout( local_size_x = 64 ) in;
+
+layout( std430, set = 0, binding = 0 ) buffer Indirect_Command
+{
+	VkDrawIndexedIndirectCommand cmds[];
+};
+
+layout( std430, set = 0, binding = 1 ) buffer Mesh_Id
+{
+	MeshId ids[];
+};
+
+layout( std430, set = 0, binding = 2 ) buffer Desc_Additional
+{
+	DescAdditional desc_additionals[];
+};
+
+void main()
+{
+	uint index = gl_GlobalInvocationID.x;
+	if(index >= registers.object_size)
+	   return;
+	   
+	MeshId id = ids[index];
+	
+	//说明是被剔除的对象
+	if(id.culledIndex == -1)
+		return;
+	
+	uint innderIndex = atomicAdd(desc_additionals[id.descIndex].innerIndex, 1);
+	ids[innderIndex].culledIndex = index;
+}

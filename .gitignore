@@ -46,3 +46,5 @@ cache/fossilize/TOUCH
 cache/pipeline_cache.bin
 cache/shader_cache.json
 include/glslang/build_info.h
+cache
+.vs

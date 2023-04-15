@@ -28,6 +28,7 @@ namespace Granite
 {
 namespace Threaded
 {
+//wq 多线程gather
 void scene_gather_opaque_renderables(const Scene &scene, TaskComposer &composer, const Frustum &frustum,
                                      VisibilityList *lists, unsigned num_tasks)
 {
@@ -199,6 +200,8 @@ void compose_parallel_push_renderables(TaskComposer &composer, const RenderConte
 		group.enqueue_task([=]() {
 			for (unsigned i = 1; i < count; i++)
 				queues[0].combine_render_info(queues[i]);
+			
+			//wq 这个排序也相当消耗, 两三万对象需要5ms左右
 			queues[0].sort();
 		});
 	}

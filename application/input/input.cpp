@@ -262,6 +262,13 @@ void InputTracker::joyaxis_state(unsigned index, JoypadAxis axis, float value)
 	a = value;
 }
 
+void InputTracker::scroll_event(double xoffset, double yoffset)
+{
+	ScrollEvent event(xoffset, yoffset);
+	if (handler)
+		handler->dispatch(event);
+}
+
 void InputTracker::key_event(Key key, KeyState state)
 {
 	if (state == KeyState::Released)
