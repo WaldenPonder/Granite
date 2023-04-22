@@ -53,6 +53,11 @@ if (NOT ANDROID)
     target_compile_definitions(test-gpu-dirven-pipeline PRIVATE ASSET_DIRECTORY=\"${CMAKE_CURRENT_SOURCE_DIR}/assets\")
 endif()
 
+add_granite_application(test-atmosphere test-atmosphere.cpp)
+if (NOT ANDROID)
+    target_compile_definitions(test-atmosphere PRIVATE ASSET_DIRECTORY=\"${CMAKE_CURRENT_SOURCE_DIR}/assets\")
+endif()
+
 add_granite_application(multi-draw-indirect multi_draw_indirect.cpp)
 if (NOT ANDROID)
     target_compile_definitions(multi-draw-indirect PRIVATE ASSET_DIRECTORY=\"${CMAKE_CURRENT_SOURCE_DIR}/assets\")

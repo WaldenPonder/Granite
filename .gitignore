@@ -48,3 +48,5 @@ cache/shader_cache.json
 include/glslang/build_info.h
 cache
 .vs
+Debug
+x64

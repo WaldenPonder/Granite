@@ -109,7 +109,7 @@ static void read_json(const std::string &file_name, Device &device)
 					indices.emplace_back(c);
 				}
 
-				long long h = chunk.get_mash_hash(positions, indices);
+				long long h = chunk.get_mesh_hash(positions, indices);
 				auto &mp = chunk.get_mesh_hash_map();
 				auto itor = mp.find(h);
 				if (itor == mp.end())
@@ -170,7 +170,7 @@ static void read_json(const std::string &file_name, Device &device)
 					indices.emplace_back(b);
 				}
 
-				long long h = chunk.get_mash_hash(positions, indices);
+				long long h = chunk.get_mesh_hash(positions, indices);
 				auto &mp = chunk.get_mesh_hash_map();
 				auto itor = mp.find(h);
 				if (itor == mp.end())
@@ -213,7 +213,7 @@ static void add_mesh(Chunk &chunk, const vector<vec4> &positions, const vector<i
 {
 	MeshId id;
 	{
-		long long h = chunk.get_mash_hash(positions, indices);
+		long long h = chunk.get_mesh_hash(positions, indices);
 
 		auto &mp = chunk.get_mesh_hash_map();
 		auto itor = mp.find(h);

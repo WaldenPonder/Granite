@@ -346,7 +346,7 @@ void Chunk::draw(CommandBufferHandle cmd)
 	//debug();
 }
 
-long long Chunk::get_mash_hash(const vector<vec4> &positions, const vector<int> &indices)
+long long Chunk::get_mesh_hash(const vector<vec4> &positions, const vector<int> &indices)
 {
 	long long h = 0;
 

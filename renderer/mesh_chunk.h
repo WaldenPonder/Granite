@@ -121,7 +121,7 @@ public:
 	void calcul_culled_index_relationship();
 	void draw(CommandBufferHandle cmd);
 
-	long long get_mash_hash(const vector<vec4>& positions, const vector<int>& indices);
+	long long get_mesh_hash(const vector<vec4>& positions, const vector<int>& indices);
 
 	MeshHashMap& get_mesh_hash_map() { return mesh_hash_map; }
 

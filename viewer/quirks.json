@@ -5,7 +5,7 @@
 	"useTransientDepthStencil": true,
 	"queueWaitOnSubmission": false,
 	"stagingNeedDeviceLocal" : false,
-	"useAsyncComputePost": true,
+	"useAsyncComputePost": false,
 	"renderGraphForceSingleQueue" : false,
 	"forceNoSubgroups" : false,
 	"forceNoSubgroupShuffle" : false,

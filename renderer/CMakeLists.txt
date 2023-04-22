@@ -17,7 +17,7 @@ add_granite_internal_lib(granite-renderer
         flat_renderer.hpp flat_renderer.cpp
         renderer_enums.hpp
         animation_system.hpp animation_system.cpp
-	    mesh_chunk.h mesh_chunk.cpp
+        mesh_chunk.h mesh_chunk.cpp
         Trackball.h Trackball.cpp
         render_graph.cpp render_graph.hpp
         ground.hpp ground.cpp
