@@ -90,8 +90,7 @@ void TestRenderGraph::on_swapchain_changed(const SwapchainParameterEvent &swap)
 
 	AttachmentInfo main_output;
 	main_output.size_class = SwapchainRelative;
-	main_output.format = VK_FORMAT_R16G16B16A16_SFLOAT;
-	//VK_FORMAT_R8G8B8A8_UNORM;
+	main_output.format = VK_FORMAT_R8G8B8A8_UNORM;
 	main_output.size_x = 1;
 	main_output.size_y = 1;
 

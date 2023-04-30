@@ -1,0 +1,74 @@
+#version 450
+#include "util.h"
+//size 等于desc size
+layout( local_size_x = 64 ) in;
+layout( std430, set = 0, binding = 0 ) buffer Indirect_Command
+{
+	VkDrawIndexedIndirectCommand cmds[];
+};
+
+layout( std430, set = 0, binding = 1 ) buffer Mesh_Id
+{
+	MeshId ids[];
+};
+
+layout( std430, set = 0, binding = 2 ) buffer Desc_Additional
+{
+	DescAdditional desc_additionals[];
+};
+
+layout( std430, set = 0, binding = 3) buffer TranslateInput
+{
+	vec4 translates[];
+};
+
+bool FrustumCull(int descIndex) {
+
+	uint index = gl_GlobalInvocationID.x;
+	//uint index = gl_GlobalInvocationID.z  * gl_GlobalInvocationID.y * gl_GlobalInvocationID.x;
+	DescAdditional additional = desc_additionals[descIndex];
+	
+	vec4 tmp0 = (additional.bbMaxPt + translates[index]);
+	vec4 tmp1 = (additional.bbMinPt + translates[index]);
+	
+	float x0 = tmp0.x;
+	float y0 = tmp0.y;
+	float z0 = tmp0.z;
+	float x1 = tmp1.x;
+	float y1 = tmp1.y;
+	float z1 = tmp1.z;
+
+	vec4 p0 = registers.MVP * vec4(x0, y0, z0, 1); 
+	vec4 p1 = registers.MVP * vec4(x1, y0, z0, 1); 
+	vec4 p2 = registers.MVP * vec4(x0, y1, z0, 1); 
+	vec4 p3 = registers.MVP * vec4(x1, y1, z0, 1);  
+	
+	vec4 p4 = registers.MVP * vec4(x0, y0, z1, 1); 
+	vec4 p5 = registers.MVP * vec4(x1, y0, z1, 1); 
+	vec4 p6 = registers.MVP * vec4(x0, y1, z1, 1); 
+	vec4 p7 = registers.MVP * vec4(x1, y1, z1, 1);  
+
+	return CheckCull(p0, p1, p2, p3, p4, p5, p6, p7);
+}
+
+void main()
+{
+	uint index = gl_GlobalInvocationID.x;
+	ids[index].culledIndex = -1;
+	
+	if(index >= registers.object_size)
+	   return;
+	
+	MeshId id = ids[index];
+	
+	if(FrustumCull(id.descIndex))
+		return;
+	
+	//atomicAdd(ids[0].debug0, 1);
+   	
+	//ids[0].debug0 = registers.object_size;
+	
+	ids[index].culledIndex = 1;
+	
+	atomicAdd(cmds[id.descIndex].instanceCount, 1);
+}

@@ -1,0 +1,38 @@
+#version 450
+#include "util.h"
+
+layout( local_size_x = 64 ) in;
+
+layout( std430, set = 0, binding = 0 ) buffer Indirect_Command
+{
+	VkDrawIndexedIndirectCommand cmds[];
+};
+
+layout( std430, set = 0, binding = 1 ) buffer Mesh_Id
+{
+	MeshId ids[];
+};
+
+layout( std430, set = 0, binding = 2 ) buffer Desc_Additional
+{
+	DescAdditional desc_additionals[];
+};
+
+void main()
+{	
+	uint index = gl_GlobalInvocationID.x;
+
+	if(index >= registers.desc_size)
+	   return;
+	   	
+	for(uint i = 0; i < index; i++ )
+	{
+	   atomicAdd(cmds[index].firstInstance, cmds[i].instanceCount);
+	}
+	
+	//barrier();
+
+	desc_additionals[index].innerIndex = cmds[index].firstInstance;
+
+	//ids[index].debug0 = int(cmds[index].firstInstance);
+}

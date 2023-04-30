@@ -1,0 +1,36 @@
+#version 450
+#include "util.h"
+
+layout( local_size_x = 64) in;
+
+layout( std430, set = 0, binding = 0 ) buffer Indirect_Command
+{
+	VkDrawIndexedIndirectCommand cmds[];
+};
+
+layout( std430, set = 0, binding = 1 ) buffer Mesh_Id
+{
+	MeshId ids[];
+};
+
+void main()
+{
+	uint index = gl_GlobalInvocationID.x;
+	//uint index = gl_GlobalInvocationID.z  * gl_GlobalInvocationID.y * gl_GlobalInvocationID.x;
+	if(index >= registers.object_size)
+	   return;
+	  
+	MeshId id = ids[index];
+	
+	ids[index].debug0 = 0;
+	// ids[index].debug1 = int(gl_GlobalInvocationID.x);
+	// ids[index].debug2 = int(gl_GlobalInvocationID.y);
+	
+	//放在此处可能不少很合适， 会重复向同一个地址写入相同的数据
+	//后续如果有性能问题，可以单独起一个cs
+	cmds[id.descIndex].instanceCount = 0;
+	cmds[id.descIndex].firstInstance = 0;
+	cmds[id.descIndex].firstIndex = id.firstIndex;
+	cmds[id.descIndex].vertexOffset = id.vertexOffset;
+	cmds[id.descIndex].indexCount = id.indexCount;
+}
