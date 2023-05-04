@@ -34,6 +34,48 @@
 using namespace Granite;
 using namespace Vulkan;
 
+struct AtmosphereParameters
+{
+	// Radius of the planet (center to ground)
+	float BottomRadius = 6360.0f;
+	// Maximum considered atmosphere height (center to atmosphere top)
+	float TopRadius = 6460.0f;
+
+	// Rayleigh scattering exponential distribution scale in the atmosphere
+	float RayleighDensityExpScale = 8.0f;
+
+		// Another medium type in the atmosphere
+	float AbsorptionDensity0LayerWidth = 25.f;
+
+	// Rayleigh scattering coefficients
+	vec3 RayleighScattering = vec3(0.005802f, 0.013558f, 0.033100f);
+
+	// Mie scattering exponential distribution scale in the atmosphere
+	float MieDensityExpScale = 1.2f;
+	
+	// Mie scattering coefficients
+	vec3 MieScattering = vec3(0.003996f, 0.003996f, 0.003996f);
+
+	float AbsorptionDensity0ConstantTerm = -2.0f / 3.0f;
+
+	// Mie extinction coefficients
+	vec3 MieExtinction = vec3(0.004440f, 0.004440f, 0.004440f);
+	float AbsorptionDensity0LinearTerm = 1.0f / 15.0f;
+	
+	// Mie absorption coefficients
+	vec3 MieAbsorption;
+	// Mie phase function excentricity
+	float MiePhaseG = 0.8f;
+		
+	// This other medium only absorb light, e.g. useful to represent ozone in the earth atmosphere
+	vec3 AbsorptionExtinction = vec3(0.000650f, 0.001881f, 0.000085f);
+	float AbsorptionDensity1ConstantTerm = 8.0f / 3.0f;
+
+	// The albedo of the ground.
+	vec3 GroundAlbedo = vec3(0.0f, 0.0f, 0.0f);
+	float AbsorptionDensity1LinearTerm = -1.0f / 15.0f;
+} push;
+
 struct TestRenderGraph : Granite::Application, Granite::EventHandler
 {
 	TestRenderGraph()
@@ -88,90 +130,74 @@ void TestRenderGraph::on_swapchain_changed(const SwapchainParameterEvent &swap)
 	dim.transform = swap.get_prerotate();
 	graph.set_backbuffer_dimensions(dim);
 
-	AttachmentInfo main_output;
-	main_output.size_class = SwapchainRelative;
-	main_output.format = VK_FORMAT_R16G16B16A16_SFLOAT;
-	//VK_FORMAT_R8G8B8A8_UNORM;
-	main_output.size_x = 1;
-	main_output.size_y = 1;
+	//-------------------------------------------------------------------------------TransmittanceLut
+	auto &pass = graph.add_pass("transmittance_lut", RENDER_GRAPH_QUEUE_GRAPHICS_BIT);
+	{
+		AttachmentInfo info;
+		//info.size_class = Absolute;
+		info.format = VK_FORMAT_R16G16B16A16_SFLOAT;
+		//info.size_x = 256;
+		//info.size_y = 64;
 
-	AttachmentInfo main_depth;
-	main_depth.format = swap.get_device().get_default_depth_format();
+		pass.add_color_output("transmittance_lut", info);
+		pass.set_get_clear_color(
+		    [](unsigned, VkClearColorValue *value) -> bool
+		    {
+			    if (value)
+			    {
+				    value->float32[0] = 0.0f;
+				    value->float32[1] = 0.0f;
+				    value->float32[2] = 0.0f;
+				    value->float32[3] = 0.0f;
+			    }
 
-	float scale = 1.f;
+			    return true;
+		    });
 
-	main_depth.size_x = scale;
-	main_depth.size_y = scale;
+		pass.set_build_render_pass(
+		    [&](CommandBuffer &cmd_buffer)
+		    {
+			    auto *cmd = &cmd_buffer;
+			    cmd->set_program("assets://shaders/triangle.vert",
+			                     "assets://shaders/atmosphere/transmittance_lut.frag");
+			    cmd->set_opaque_state();
+			    cmd->set_primitive_topology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
+
+			    vec2 vertices[] = {
+				    vec2(-0.5f, -0.5f),
+				    vec2(-0.5f, +0.5f),
+				    vec2(+0.5f, -0.5f),
+			    };
+
+			    auto c = float(muglm::cos(elapsed_time * 2.0));
+			    auto s = float(muglm::sin(elapsed_time * 2.0));
+			    mat2 m{ vec2(c, -s), vec2(s, c) };
+			    for (auto &v : vertices)
+				    v = m * v;
+
+			    static const vec4 colors[] = {
+				    vec4(1.0f, 0.0f, 0.0f, 1.0f),
+				    vec4(0.0f, 1.0f, 0.0f, 1.0f),
+				    vec4(0.0f, 0.0f, 1.0f, 1.0f),
+			    };
+
+			    auto *verts = static_cast<vec2 *>(cmd->allocate_vertex_data(0, sizeof(vertices), sizeof(vec2)));
+			    auto *col = static_cast<vec4 *>(cmd->allocate_vertex_data(1, sizeof(colors), sizeof(vec4)));
+			    memcpy(verts, vertices, sizeof(vertices));
+			    memcpy(col, colors, sizeof(colors));
+			    cmd->set_vertex_attrib(0, 0, VK_FORMAT_R32G32_SFLOAT, 0);
+			    cmd->set_vertex_attrib(1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, 0);
+
+			    cmd->push_constants(&push, 0, sizeof(push));
+			    cmd->draw(3);
+		    });
+	}
 
 	AttachmentInfo back;
 
-	auto &pass = graph.add_pass("xxx", RENDER_GRAPH_QUEUE_GRAPHICS_BIT);
-	pass.add_color_output("xxx", main_output);
-	pass.set_depth_stencil_output("depth-main", main_depth);
-	pass.set_get_clear_color(
-	    [](unsigned, VkClearColorValue *value) -> bool
-	    {
-		    if (value)
-		    {
-			    value->float32[0] = 0.0f;
-			    value->float32[1] = 0.0f;
-			    value->float32[2] = 0.0f;
-			    value->float32[3] = 0.0f;
-		    }
-
-		    return true;
-	    });
-
-	pass.set_build_render_pass(
-	    [&](CommandBuffer &cmd_buffer)
-	    {
-		    auto *cmd = &cmd_buffer;
-		    //cmd->begin_render_pass(device.get_swapchain_render_pass(SwapchainRenderPass::ColorOnly));
-		    cmd->set_program("assets://shaders/triangle.vert", "assets://shaders/triangle.frag");
-		    cmd->set_opaque_state();
-		    cmd->set_primitive_topology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
-
-		    vec2 vertices[] = {
-			    vec2(-0.5f, -0.5f),
-			    vec2(-0.5f, +0.5f),
-			    vec2(+0.5f, -0.5f),
-		    };
-
-		    auto c = float(muglm::cos(elapsed_time * 2.0));
-		    auto s = float(muglm::sin(elapsed_time * 2.0));
-		    mat2 m{ vec2(c, -s), vec2(s, c) };
-		    for (auto &v : vertices)
-			    v = m * v;
-
-		    static const vec4 colors[] = {
-			    vec4(1.0f, 0.0f, 0.0f, 1.0f),
-			    vec4(0.0f, 1.0f, 0.0f, 1.0f),
-			    vec4(0.0f, 0.0f, 1.0f, 1.0f),
-		    };
-
-		    auto *verts = static_cast<vec2 *>(cmd->allocate_vertex_data(0, sizeof(vertices), sizeof(vec2)));
-		    auto *col = static_cast<vec4 *>(cmd->allocate_vertex_data(1, sizeof(colors), sizeof(vec4)));
-		    memcpy(verts, vertices, sizeof(vertices));
-		    memcpy(col, colors, sizeof(colors));
-		    cmd->set_vertex_attrib(0, 0, VK_FORMAT_R32G32_SFLOAT, 0);
-		    cmd->set_vertex_attrib(1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, 0);
-		    cmd->draw(3);
-	    });
-
-	pass.set_get_clear_depth_stencil(
-	    [](VkClearDepthStencilValue *value) -> bool
-	    {
-		    if (value)
-		    {
-			    value->depth = 0.0f;
-			    value->stencil = 0;
-		    }
-		    return true;
-	    });
-
 	auto &tonemap = graph.add_pass("tonemap", RENDER_GRAPH_QUEUE_GRAPHICS_BIT);
 	tonemap.add_color_output("tonemap", back);
-	auto &tonemap_res = tonemap.add_texture_input("xxx");
+	auto &tonemap_res = tonemap.add_texture_input("transmittance_lut");
 	//tonemap.set_depth_stencil_output("depth-main", main_depth);
 	tonemap.set_build_render_pass(
 	    [&](CommandBuffer &cmd_buffer)
