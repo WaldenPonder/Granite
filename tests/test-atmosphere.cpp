@@ -74,7 +74,17 @@ struct AtmosphereParameters
 	// The albedo of the ground.
 	vec3 GroundAlbedo = vec3(0.0f, 0.0f, 0.0f);
 	float AbsorptionDensity1LinearTerm = -1.0f / 15.0f;
+
+	vec2 RayMarchMinMaxSPP = vec2(4, 14);
+	int screenWidth = 1280;
+	int screenHeight = 720;
 } push;
+
+struct UBO
+{
+	mat4 MVP;
+	mat4 inversMVP;
+} ubo;
 
 struct TestRenderGraph : Granite::Application, Granite::EventHandler
 {
@@ -130,7 +140,12 @@ void TestRenderGraph::on_swapchain_changed(const SwapchainParameterEvent &swap)
 	dim.transform = swap.get_prerotate();
 	graph.set_backbuffer_dimensions(dim);
 
+	push.screenWidth = dim.width;
+	push.screenHeight = dim.height;
+
+	int sz = sizeof(push);
 	//-------------------------------------------------------------------------------TransmittanceLut
+#if 0
 	auto &pass = graph.add_pass("transmittance_lut", RENDER_GRAPH_QUEUE_GRAPHICS_BIT);
 	{
 		AttachmentInfo info;
@@ -158,8 +173,8 @@ void TestRenderGraph::on_swapchain_changed(const SwapchainParameterEvent &swap)
 		    [&](CommandBuffer &cmd_buffer)
 		    {
 			    auto *cmd = &cmd_buffer;
-			    cmd->set_program("assets://shaders/triangle.vert",
-			                     "assets://shaders/atmosphere/transmittance_lut.frag");
+			    cmd->set_program("assets://shaders/triangle.vert", //"assets://shaders/triangle.frag");
+			                    "assets://shaders/atmosphere/transmittance_lut.frag");
 			    cmd->set_opaque_state();
 			    cmd->set_primitive_topology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
 
@@ -188,25 +203,33 @@ void TestRenderGraph::on_swapchain_changed(const SwapchainParameterEvent &swap)
 			    cmd->set_vertex_attrib(0, 0, VK_FORMAT_R32G32_SFLOAT, 0);
 			    cmd->set_vertex_attrib(1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, 0);
 
+				auto *global = static_cast<UBO*>(cmd->allocate_constant_data(0, 0, sizeof(UBO)));
+			    *global = ubo;
+
 			    cmd->push_constants(&push, 0, sizeof(push));
 			    cmd->draw(3);
 		    });
 	}
-
+#endif
 	AttachmentInfo back;
 
 	auto &tonemap = graph.add_pass("tonemap", RENDER_GRAPH_QUEUE_GRAPHICS_BIT);
 	tonemap.add_color_output("tonemap", back);
-	auto &tonemap_res = tonemap.add_texture_input("transmittance_lut");
+	//auto &tonemap_res = tonemap.add_texture_input("transmittance_lut");
 	//tonemap.set_depth_stencil_output("depth-main", main_depth);
 	tonemap.set_build_render_pass(
 	    [&](CommandBuffer &cmd_buffer)
 	    {
 		    auto *cmd = &cmd_buffer;
-		    auto &input = graph.get_physical_texture_resource(tonemap_res);
-		    cmd->set_texture(0, 0, input, StockSampler::LinearClamp);
+		   // auto &input = graph.get_physical_texture_resource(tonemap_res);
+		  //  cmd->set_texture(0, 0, input, StockSampler::LinearClamp);
+		    auto *global = static_cast<UBO *>(cmd->allocate_constant_data(0, 0, sizeof(UBO)));
+		    *global = ubo;
+	    	cmd->push_constants(&push, 0, sizeof(push));
+		    cmd->draw(3);
 
-		    CommandBufferUtil::setup_fullscreen_quad(*cmd, "builtin://shaders/quad.vert", "builtin://shaders/blit.frag",
+		    CommandBufferUtil::setup_fullscreen_quad(*cmd, "builtin://shaders/quad.vert",
+		                                             "assets://shaders/atmosphere/transmittance_lut.frag",
 		                                             {});
 		    CommandBufferUtil::draw_fullscreen_quad(*cmd);
 	    });
