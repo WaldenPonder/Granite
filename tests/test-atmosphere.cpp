@@ -59,11 +59,11 @@ struct AtmosphereParameters
 	float AbsorptionDensity0ConstantTerm = -2.0f / 3.0f;
 
 	// Mie extinction coefficients
-	vec3 MieExtinction = vec3(0.004440f, 0.004440f, 0.004440f);
+	vec3 MieExtinction = vec3(0.00443999982, 0.00443999982, 0.00443999982);
 	float AbsorptionDensity0LinearTerm = 1.0f / 15.0f;
 	
 	// Mie absorption coefficients
-	vec3 MieAbsorption;
+	vec3 MieAbsorption;;
 	// Mie phase function excentricity
 	float MiePhaseG = 0.8f;
 		
@@ -143,6 +143,9 @@ void TestRenderGraph::on_swapchain_changed(const SwapchainParameterEvent &swap)
 	push.screenWidth = dim.width;
 	push.screenHeight = dim.height;
 
+	vec3 delta = push.MieExtinction - push.MieScattering;
+	delta.x = max(delta.x, 0.f), delta.y = max(delta.y, 0.f), delta.z = max(delta.z, 0.f);
+	push.MieAbsorption = delta;
 	int sz = sizeof(push);
 	//-------------------------------------------------------------------------------TransmittanceLut
 #if 0
@@ -212,7 +215,7 @@ void TestRenderGraph::on_swapchain_changed(const SwapchainParameterEvent &swap)
 	}
 #endif
 	AttachmentInfo back;
-
+	back.format = VK_FORMAT_R16G16B16A16_SFLOAT;
 	auto &tonemap = graph.add_pass("tonemap", RENDER_GRAPH_QUEUE_GRAPHICS_BIT);
 	tonemap.add_color_output("tonemap", back);
 	//auto &tonemap_res = tonemap.add_texture_input("transmittance_lut");
@@ -226,7 +229,7 @@ void TestRenderGraph::on_swapchain_changed(const SwapchainParameterEvent &swap)
 		    auto *global = static_cast<UBO *>(cmd->allocate_constant_data(0, 0, sizeof(UBO)));
 		    *global = ubo;
 	    	cmd->push_constants(&push, 0, sizeof(push));
-		    cmd->draw(3);
+		    //cmd->draw(3);
 
 		    CommandBufferUtil::setup_fullscreen_quad(*cmd, "builtin://shaders/quad.vert",
 		                                             "assets://shaders/atmosphere/transmittance_lut.frag",

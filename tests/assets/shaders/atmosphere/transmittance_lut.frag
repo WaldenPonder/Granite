@@ -1,5 +1,6 @@
 #version 450
 layout(location = 0) out vec4 FragColor;
+layout(location = 0) in highp vec2 vUV;
 
 // #define TRANSMITTANCE_TEXTURE_WIDTH  256
 // #define TRANSMITTANCE_TEXTURE_HEIGHT 64
@@ -56,7 +57,7 @@ layout(push_constant, std430) uniform AtmosphereParameters
 } PARAM;
 
 
-layout(std140, set = 0, binding = 2) uniform UBO
+layout(std140, set = 0, binding = 0) uniform UBO
 {
     mat4 MVP;
     mat4 inversMVP;
@@ -281,8 +282,9 @@ vec3 IntegrateScatteredLuminance(
 	float t = 0.0f;
 	float tPrev = 0.0;
 	const float SampleSegmentT = 0.3f;
+    
 	for (float s = 0.0f; s < SampleCount; s += 1.0f)
-	{
+	{ 
 		if (VariableSampleCount)
 		{
 			// More expenssive but artefact free
@@ -315,15 +317,14 @@ vec3 IntegrateScatteredLuminance(
 			t = NewT;
 		}
 		vec3 P = WorldPos + t * WorldDir;
-        
-		MediumSampleRGB medium = sampleMediumRGB(P);
+        //return vec3(dt / 10);
+		MediumSampleRGB medium = sampleMediumRGB(P);                     
 		const vec3 SampleOpticalDepth = medium.extinction * dt;
-		const vec3 SampleTransmittance = exp(-SampleOpticalDepth);
+		//const vec3 SampleTransmittance = exp(-SampleOpticalDepth);
 		OpticalDepth += SampleOpticalDepth;
-return medium.extinction;
+        //return OpticalDepth;//medium.extinction;
 		tPrev = t;
 	}
-
 	return OpticalDepth;
 }
 
@@ -344,18 +345,19 @@ void main()
 	const bool ground = false;
 	const float SampleCountIni = 40.0f;	// Can go a low as 10 sample but energy lost starts to be visible.
 	const float DepthBufferValue = -1.0;
-	const bool VariableSampleCount = true;
+	const bool VariableSampleCount = false;
 	const bool MieRayPhase = false;
     
-    vec3 sun_direction = vec3(0.0, 0.900447130, 0.434965521);
+    vec3 sun_direction = vec3(0, 0.0, 1);
     vec3 transmittance = IntegrateScatteredLuminance(pixPos, WorldPos, WorldDir, sun_direction, 
     ground, SampleCountIni, DepthBufferValue, VariableSampleCount, MieRayPhase, 9000000.0f);
     
-    //FragColor = vec4(1000000* transmittance,1);
-    //FragColor.rg = vec2(viewHeight, viewZenithCosAngle);
-    FragColor.rgb =  transmittance;
-    FragColor.a = 1;
+    FragColor = vec4(transmittance,1);
     
+    //FragColor.rg = vec2(viewHeight, viewZenithCosAngle);
+    //FragColor.rgb = FragColor.rgb  / 1000900000000000000000008989989800;// exp(-transmittance);
+    FragColor.a = 1;
+   // FragColor.rg = vUV;
     //if(transmittance.r < 10.1)
     // FragColor = vec4(1,0,0,1);
  #if 0   
