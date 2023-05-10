@@ -147,96 +147,51 @@ void TestRenderGraph::on_swapchain_changed(const SwapchainParameterEvent &swap)
 	delta.x = max(delta.x, 0.f), delta.y = max(delta.y, 0.f), delta.z = max(delta.z, 0.f);
 	push.MieAbsorption = delta;
 	int sz = sizeof(push);
+
 	//-------------------------------------------------------------------------------TransmittanceLut
-#if 0
-	auto &pass = graph.add_pass("transmittance_lut", RENDER_GRAPH_QUEUE_GRAPHICS_BIT);
+	auto &transmittance = graph.add_pass("TransmittanceLut", RENDER_GRAPH_QUEUE_GRAPHICS_BIT);
 	{
-		AttachmentInfo info;
-		//info.size_class = Absolute;
-		info.format = VK_FORMAT_R16G16B16A16_SFLOAT;
-		//info.size_x = 256;
-		//info.size_y = 64;
-
-		pass.add_color_output("transmittance_lut", info);
-		pass.set_get_clear_color(
-		    [](unsigned, VkClearColorValue *value) -> bool
-		    {
-			    if (value)
-			    {
-				    value->float32[0] = 0.0f;
-				    value->float32[1] = 0.0f;
-				    value->float32[2] = 0.0f;
-				    value->float32[3] = 0.0f;
-			    }
-
-			    return true;
-		    });
-
-		pass.set_build_render_pass(
+		AttachmentInfo back;
+		back.format = VK_FORMAT_R8G8B8A8_UNORM;
+		transmittance.add_color_output("TransmittanceLut", back);
+		transmittance.set_build_render_pass(
 		    [&](CommandBuffer &cmd_buffer)
 		    {
 			    auto *cmd = &cmd_buffer;
-			    cmd->set_program("assets://shaders/triangle.vert", //"assets://shaders/triangle.frag");
-			                    "assets://shaders/atmosphere/transmittance_lut.frag");
-			    cmd->set_opaque_state();
-			    cmd->set_primitive_topology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
-
-			    vec2 vertices[] = {
-				    vec2(-0.5f, -0.5f),
-				    vec2(-0.5f, +0.5f),
-				    vec2(+0.5f, -0.5f),
-			    };
-
-			    auto c = float(muglm::cos(elapsed_time * 2.0));
-			    auto s = float(muglm::sin(elapsed_time * 2.0));
-			    mat2 m{ vec2(c, -s), vec2(s, c) };
-			    for (auto &v : vertices)
-				    v = m * v;
-
-			    static const vec4 colors[] = {
-				    vec4(1.0f, 0.0f, 0.0f, 1.0f),
-				    vec4(0.0f, 1.0f, 0.0f, 1.0f),
-				    vec4(0.0f, 0.0f, 1.0f, 1.0f),
-			    };
-
-			    auto *verts = static_cast<vec2 *>(cmd->allocate_vertex_data(0, sizeof(vertices), sizeof(vec2)));
-			    auto *col = static_cast<vec4 *>(cmd->allocate_vertex_data(1, sizeof(colors), sizeof(vec4)));
-			    memcpy(verts, vertices, sizeof(vertices));
-			    memcpy(col, colors, sizeof(colors));
-			    cmd->set_vertex_attrib(0, 0, VK_FORMAT_R32G32_SFLOAT, 0);
-			    cmd->set_vertex_attrib(1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, 0);
-
-				auto *global = static_cast<UBO*>(cmd->allocate_constant_data(0, 0, sizeof(UBO)));
+			    auto *global = static_cast<UBO *>(cmd->allocate_constant_data(0, 0, sizeof(UBO)));
 			    *global = ubo;
-
 			    cmd->push_constants(&push, 0, sizeof(push));
-			    cmd->draw(3);
+
+			    CommandBufferUtil::setup_fullscreen_quad(*cmd, "builtin://shaders/quad.vert",
+			                                             "assets://shaders/atmosphere/transmittance_lut.frag", {});
+			    CommandBufferUtil::draw_fullscreen_quad(*cmd);
 		    });
 	}
-#endif
-	AttachmentInfo back;
-	back.format = VK_FORMAT_R16G16B16A16_SFLOAT;
-	auto &tonemap = graph.add_pass("tonemap", RENDER_GRAPH_QUEUE_GRAPHICS_BIT);
-	tonemap.add_color_output("tonemap", back);
-	//auto &tonemap_res = tonemap.add_texture_input("transmittance_lut");
-	//tonemap.set_depth_stencil_output("depth-main", main_depth);
-	tonemap.set_build_render_pass(
-	    [&](CommandBuffer &cmd_buffer)
-	    {
-		    auto *cmd = &cmd_buffer;
-		   // auto &input = graph.get_physical_texture_resource(tonemap_res);
-		  //  cmd->set_texture(0, 0, input, StockSampler::LinearClamp);
-		    auto *global = static_cast<UBO *>(cmd->allocate_constant_data(0, 0, sizeof(UBO)));
-		    *global = ubo;
-	    	cmd->push_constants(&push, 0, sizeof(push));
-		    //cmd->draw(3);
 
-		    CommandBufferUtil::setup_fullscreen_quad(*cmd, "builtin://shaders/quad.vert",
-		                                             "assets://shaders/atmosphere/transmittance_lut.frag",
-		                                             {});
-		    CommandBufferUtil::draw_fullscreen_quad(*cmd);
-	    });
-	graph.set_backbuffer_source("tonemap");
+
+	//-------------------------------------------------------------------------------RayMarching
+	auto &rayMarching = graph.add_pass("RayMarching", RENDER_GRAPH_QUEUE_GRAPHICS_BIT);
+	{
+		AttachmentInfo back;
+		rayMarching.add_color_output("RayMarching", back);
+		auto &transmittance_lut = rayMarching.add_texture_input("TransmittanceLut");
+		rayMarching.set_build_render_pass(
+		    [&](CommandBuffer &cmd_buffer)
+		    {
+			    auto *cmd = &cmd_buffer;
+			    auto &input = graph.get_physical_texture_resource(transmittance_lut);
+		    	cmd->set_texture(0, 0, input, StockSampler::LinearClamp);
+			    auto *global = static_cast<UBO *>(cmd->allocate_constant_data(0, 1, sizeof(UBO)));
+			    *global = ubo;
+			    cmd->push_constants(&push, 0, sizeof(push));
+
+			    CommandBufferUtil::setup_fullscreen_quad(*cmd, "builtin://shaders/quad.vert",
+			                                             "assets://shaders/atmosphere/ray_marching.frag", {});
+			    CommandBufferUtil::draw_fullscreen_quad(*cmd);
+		    });
+	}
+
+	graph.set_backbuffer_source("RayMarching");
 	graph.enable_timestamps(true);
 
 	graph.bake();

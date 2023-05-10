@@ -2,6 +2,7 @@
 layout(location = 0) out vec4 FragColor;
 layout(location = 0) in highp vec2 vUV;
 
+layout(set = 0, binding = 0) uniform sampler2D uImage;
 // #define TRANSMITTANCE_TEXTURE_WIDTH  256
 // #define TRANSMITTANCE_TEXTURE_HEIGHT 64
 
@@ -57,7 +58,7 @@ layout(push_constant, std430) uniform AtmosphereParameters
 } PARAM;
 
 
-layout(std140, set = 0, binding = 0) uniform UBO
+layout(std140, set = 0, binding = 1) uniform UBO
 {
     mat4 MVP;
     mat4 inversMVP;
@@ -331,6 +332,9 @@ vec3 IntegrateScatteredLuminance(
 
 void main()
 {
+    FragColor = texture(uImage, vUV);
+    //FragColor = vec4(1,0,0,1);
+    //return;
     vec2 pixPos = gl_FragCoord.xy;
     // Compute camera position from LUT coords
 	vec2 uv = (pixPos) / vec2(TRANSMITTANCE_TEXTURE_WIDTH, TRANSMITTANCE_TEXTURE_HEIGHT);
@@ -359,7 +363,7 @@ void main()
     FragColor.a = 1;
    // FragColor.rg = vUV;
     //if(transmittance.r < 10.1)
-    //FragColor = vec4(1,0,0,1);
+    // FragColor = vec4(1,0,0,1);
  #if 0   
     if(PARAM.BottomRadius == 6360.0f)
     if(PARAM.TopRadius == 6460.0f)
@@ -378,6 +382,6 @@ void main()
     if(PARAM.screenWidth == 1280)
     if(PARAM.screenHeight == 720)
     if(PARAM.RayMarchMinMaxSPP == vec2(4, 14))
-        FragColor = vec4(1,0,1,1);
+        FragColor = vec4(1,0,0,1);
 #endif
 }
