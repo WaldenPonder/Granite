@@ -1,6 +1,6 @@
 #version 450
 layout(location = 0) out vec4 FragColor;
-layout(location = 0) in highp vec2 vUV;
+layout(location = 0) in  vec2 vUV;
 
 layout(set = 0, binding = 0) uniform sampler2D uImage;
 // #define TRANSMITTANCE_TEXTURE_WIDTH  256
@@ -205,6 +205,23 @@ MediumSampleRGB sampleMediumRGB(in vec3 WorldPos)
 	return s;
 }
 
+void LutTransmittanceParamsToUv(in float viewHeight, in float viewZenithCosAngle, out vec2 uv)
+{
+	float H = sqrt(max(0.0f, PARAM.TopRadius * PARAM.TopRadius - PARAM.BottomRadius * PARAM.BottomRadius));
+	float rho = sqrt(max(0.0f, viewHeight * viewHeight - PARAM.BottomRadius * PARAM.BottomRadius));
+
+	float discriminant = viewHeight * viewHeight * (viewZenithCosAngle * viewZenithCosAngle - 1.0) + PARAM.TopRadius * PARAM.TopRadius;
+	float d = max(0.0, (-viewHeight * viewZenithCosAngle + sqrt(discriminant))); // Distance to atmosphere boundary
+
+	float d_min = PARAM.TopRadius - viewHeight;
+	float d_max = rho + H;
+	float x_mu = (d - d_min) / (d_max - d_min);
+	float x_r = rho / H;
+
+	uv = vec2(x_mu, x_r);
+	//uv = float2(fromUnitToSubUvs(uv.x, TRANSMITTANCE_TEXTURE_WIDTH), fromUnitToSubUvs(uv.y, TRANSMITTANCE_TEXTURE_HEIGHT)); // No real impact so off
+}
+
 vec3 IntegrateScatteredLuminance(
 	in vec2 pixPos, in vec3 WorldPos, in vec3 WorldDir, in vec3 SunDir,
 	in bool ground, in float SampleCountIni, in float DepthBufferValue, in bool VariableSampleCount,
@@ -284,49 +301,25 @@ vec3 IntegrateScatteredLuminance(
 	float tPrev = 0.0;
 	const float SampleSegmentT = 0.3f;
     
-	for (float s = 0.0f; s < SampleCount; s += 1.0f)
-	{ 
-		if (VariableSampleCount)
-		{
-			// More expenssive but artefact free
-			float t0 = (s) / SampleCountFloor;
-			float t1 = (s + 1.0f) / SampleCountFloor;
-			// Non linear distribution of sample within the range.
-			t0 = t0 * t0;
-			t1 = t1 * t1;
-			// Make t0 and t1 world space distances.
-			t0 = tMaxFloor * t0;
-			if (t1 > 1.0)
-			{
-				t1 = tMax;
-				//	t1 = tMaxFloor;	// this reveal depth slices
-			}
-			else
-			{
-				t1 = tMaxFloor * t1;
-			}
-			//t = t0 + (t1 - t0) * (whangHashNoise(pixPos.x, pixPos.y, gFrameId * 1920 * 1080)); // With dithering required to hide some sampling artefact relying on TAA later? This may even allow volumetric shadow?
-			t = t0 + (t1 - t0)*SampleSegmentT;
-			dt = t1 - t0;
-		}
-		else
-		{
-			//t = tMax * (s + SampleSegmentT) / SampleCount;
-			// Exact difference, important for accuracy of multiple scattering
-			float NewT = tMax * (s + SampleSegmentT) / SampleCount;
-			dt = NewT - t;
-			t = NewT;
-		}
-		vec3 P = WorldPos + t * WorldDir;
-        //return vec3(dt / 10);
-		MediumSampleRGB medium = sampleMediumRGB(P);                     
-		const vec3 SampleOpticalDepth = medium.extinction * dt;
-		//const vec3 SampleTransmittance = exp(-SampleOpticalDepth);
-		OpticalDepth += SampleOpticalDepth;
-        //return OpticalDepth;//medium.extinction;
-		tPrev = t;
+    vec3 L = vec3(0);
+    vec3 globalL = vec3(1);
+    if (ground && tMax == tBottom && tBottom > 0.0)
+	{
+		// Account for bounced light off the earth
+		vec3 P = WorldPos + tBottom * WorldDir;
+		float pHeight = length(P);
+
+		const vec3 UpVector = P / pHeight;
+		float SunZenithCosAngle = dot(SunDir, UpVector);
+		vec2 uv;
+		LutTransmittanceParamsToUv(pHeight, SunZenithCosAngle, uv);
+		//float3 TransmittanceToSun = TransmittanceLutTexture.SampleLevel(samplerLinearClamp, uv, 0).rgb;
+        vec3 TransmittanceToSun = texture(uImage, vUV).rgb;
+		const float NdotL = clamp(dot(normalize(UpVector), normalize(SunDir)), 0, 1);
+        float throughput = 1.f;
+		L += globalL * TransmittanceToSun * throughput * NdotL * PARAM.GroundAlbedo / PI;
 	}
-	return OpticalDepth;
+	return L;
 }
 
 
@@ -353,10 +346,10 @@ void main()
 	const bool MieRayPhase = false;
     
     vec3 sun_direction = vec3(0, 0.0, 1);
-    vec3 transmittance = IntegrateScatteredLuminance(pixPos, WorldPos, WorldDir, sun_direction, 
+    vec3 L = IntegrateScatteredLuminance(pixPos, WorldPos, WorldDir, sun_direction, 
     ground, SampleCountIni, DepthBufferValue, VariableSampleCount, MieRayPhase, 9000000.0f);
     
-    FragColor = vec4(transmittance,1);
+    FragColor = vec4(L,1);
     
     //FragColor.rg = vec2(viewHeight, viewZenithCosAngle);
     //FragColor.rgb = FragColor.rgb  / 1000900000000000000000008989989800;// exp(-transmittance);

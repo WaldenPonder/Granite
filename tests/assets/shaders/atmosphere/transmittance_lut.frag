@@ -352,7 +352,7 @@ void main()
     vec3 transmittance = IntegrateScatteredLuminance(pixPos, WorldPos, WorldDir, sun_direction, 
     ground, SampleCountIni, DepthBufferValue, VariableSampleCount, MieRayPhase, 9000000.0f);
     
-    FragColor = vec4(transmittance,1);
+    FragColor = vec4(exp(-transmittance),1);
     
     //FragColor.rg = vec2(viewHeight, viewZenithCosAngle);
     //FragColor.rgb = FragColor.rgb  / 1000900000000000000000008989989800;// exp(-transmittance);
