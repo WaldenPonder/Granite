@@ -326,8 +326,9 @@ vec3 IntegrateScatteredLuminance(
 void main()
 {
     FragColor = texture(uImage, vUV);
-    //FragColor = vec4(1,0,0,1);
-    //return;
+  // if(FragColor.rgb == vec3(0))
+   // FragColor = vec4(1,0,0,1);
+    return;
     vec2 pixPos = gl_FragCoord.xy;
     // Compute camera position from LUT coords
 	vec2 uv = (pixPos) / vec2(TRANSMITTANCE_TEXTURE_WIDTH, TRANSMITTANCE_TEXTURE_HEIGHT);

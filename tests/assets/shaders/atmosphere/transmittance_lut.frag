@@ -1,6 +1,6 @@
 #version 450
 layout(location = 0) out vec4 FragColor;
-layout(location = 0) in highp vec2 vUV;
+layout(location = 0) in vec2 vUV;
 
 // #define TRANSMITTANCE_TEXTURE_WIDTH  256
 // #define TRANSMITTANCE_TEXTURE_HEIGHT 64
@@ -199,8 +199,9 @@ MediumSampleRGB sampleMediumRGB(in vec3 WorldPos)
 	s.scattering = s.scatteringMie + s.scatteringRay + s.scatteringOzo;
 	s.absorption = s.absorptionMie + s.absorptionRay + s.absorptionOzo;
 	s.extinction = s.extinctionMie + s.extinctionRay + s.extinctionOzo;
-	s.albedo = getAlbedo(s.scattering, s.extinction);
+	s.albedo = getAlbedo(s.scattering, s.extinction);  
 
+    //s.extinction =  s.extinctionMie;
 	return s;
 }
 
@@ -319,7 +320,7 @@ vec3 IntegrateScatteredLuminance(
 		vec3 P = WorldPos + t * WorldDir;
         //return vec3(dt / 10);
 		MediumSampleRGB medium = sampleMediumRGB(P);                     
-		const vec3 SampleOpticalDepth = medium.extinction * dt;
+		const vec3 SampleOpticalDepth = medium.extinction * vec3(dt);
 		//const vec3 SampleTransmittance = exp(-SampleOpticalDepth);
 		OpticalDepth += SampleOpticalDepth;
         //return OpticalDepth;//medium.extinction;
@@ -348,18 +349,18 @@ void main()
 	const bool VariableSampleCount = false;
 	const bool MieRayPhase = false;
     
-    vec3 sun_direction = vec3(0, 0.0, 1);
+    vec3 sun_direction = normalize(vec3(1, 1.0, 1));
     vec3 transmittance = IntegrateScatteredLuminance(pixPos, WorldPos, WorldDir, sun_direction, 
     ground, SampleCountIni, DepthBufferValue, VariableSampleCount, MieRayPhase, 9000000.0f);
     
     FragColor = vec4(exp(-transmittance),1);
     
     //FragColor.rg = vec2(viewHeight, viewZenithCosAngle);
-    //FragColor.rgb = FragColor.rgb  / 1000900000000000000000008989989800;// exp(-transmittance);
-    FragColor.a = 1;
+   // FragColor.rgb = transmittance - vec3(50);
+  //  FragColor.a = 1;
    // FragColor.rg = vUV;
     //if(transmittance.r < 10.1)
-    //FragColor = vec4(1,0,0,1);
+   // FragColor = vec4(1,0,.4,1);
  #if 0   
     if(PARAM.BottomRadius == 6360.0f)
     if(PARAM.TopRadius == 6460.0f)

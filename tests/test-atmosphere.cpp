@@ -42,7 +42,7 @@ struct AtmosphereParameters
 	float TopRadius = 6460.0f;
 
 	// Rayleigh scattering exponential distribution scale in the atmosphere
-	float RayleighDensityExpScale = 8.0f;
+	float RayleighDensityExpScale = -1.f / 8.0f;
 
 		// Another medium type in the atmosphere
 	float AbsorptionDensity0LayerWidth = 25.f;
@@ -51,7 +51,7 @@ struct AtmosphereParameters
 	vec3 RayleighScattering = vec3(0.005802f, 0.013558f, 0.033100f);
 
 	// Mie scattering exponential distribution scale in the atmosphere
-	float MieDensityExpScale = 1.2f;
+	float MieDensityExpScale = -1.f / 1.2f;
 	
 	// Mie scattering coefficients
 	vec3 MieScattering = vec3(0.003996f, 0.003996f, 0.003996f);
@@ -152,7 +152,7 @@ void TestRenderGraph::on_swapchain_changed(const SwapchainParameterEvent &swap)
 	auto &transmittance = graph.add_pass("TransmittanceLut", RENDER_GRAPH_QUEUE_GRAPHICS_BIT);
 	{
 		AttachmentInfo back;
-		back.format = VK_FORMAT_R8G8B8A8_UNORM;
+		back.format = VK_FORMAT_R32G32B32A32_SFLOAT;
 		transmittance.add_color_output("TransmittanceLut", back);
 		transmittance.set_build_render_pass(
 		    [&](CommandBuffer &cmd_buffer)
