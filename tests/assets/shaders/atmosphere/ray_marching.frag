@@ -6,10 +6,11 @@ layout(set = 0, binding = 0) uniform sampler2D uImage;
 // #define TRANSMITTANCE_TEXTURE_WIDTH  256
 // #define TRANSMITTANCE_TEXTURE_HEIGHT 64
 
-#define TRANSMITTANCE_TEXTURE_WIDTH  1280
-#define TRANSMITTANCE_TEXTURE_HEIGHT 720
+#define TRANSMITTANCE_TEXTURE_WIDTH  1280.f
+#define TRANSMITTANCE_TEXTURE_HEIGHT 720.f
 
 #define PI 3.1415926535897932384626433832795f
+#define PLANET_RADIUS_OFFSET 0.01f
 
 layout(push_constant, std430) uniform AtmosphereParameters
 {		
@@ -60,8 +61,11 @@ layout(push_constant, std430) uniform AtmosphereParameters
 
 layout(std140, set = 0, binding = 1) uniform UBO
 {
-    mat4 MVP;
-    mat4 inversMVP;
+	mat4 MVP;
+	mat4 inversMVP;
+	mat4 projectMat;
+	mat4 invProjMat;
+    mat4 invViewMat;
 };
 
 vec2 RayMarchMinMaxSPP = vec2(4, 14);
@@ -301,24 +305,102 @@ vec3 IntegrateScatteredLuminance(
 	float tPrev = 0.0;
 	const float SampleSegmentT = 0.3f;
     
-    vec3 L = vec3(0);
+    vec3 L = vec3(0,0,0);
     vec3 globalL = vec3(1);
-    if (ground && tMax == tBottom && tBottom > 0.0)
+    
+    vec3 throughput = vec3(1.0f);
+	for (float s = 0.0f; s < SampleCount; s += 1.0f)
 	{
-		// Account for bounced light off the earth
-		vec3 P = WorldPos + tBottom * WorldDir;
-		float pHeight = length(P);
+		if (VariableSampleCount)
+		{
+			// More expenssive but artefact free
+			float t0 = (s) / SampleCountFloor;
+			float t1 = (s + 1.0f) / SampleCountFloor;
+			// Non linear distribution of sample within the range.
+			t0 = t0 * t0;
+			t1 = t1 * t1;
+			// Make t0 and t1 world space distances.
+			t0 = tMaxFloor * t0;
+			if (t1 > 1.0)
+			{
+				t1 = tMax;
+				//	t1 = tMaxFloor;	// this reveal depth slices
+			}
+			else
+			{
+				t1 = tMaxFloor * t1;
+			}
+			//t = t0 + (t1 - t0) * (whangHashNoise(pixPos.x, pixPos.y, gFrameId * 1920 * 1080)); // With dithering required to hide some sampling artefact relying on TAA later? This may even allow volumetric shadow?
+			t = t0 + (t1 - t0)*SampleSegmentT;
+			dt = t1 - t0;
+		}
+		else
+		{
+			//t = tMax * (s + SampleSegmentT) / SampleCount;
+			// Exact difference, important for accuracy of multiple scattering
+			float NewT = tMax * (s + SampleSegmentT) / SampleCount;
+			dt = NewT - t;
+			t = NewT;
+		}
+		vec3 P = WorldPos + t * WorldDir;
 
+		MediumSampleRGB medium = sampleMediumRGB(P);
+		const vec3 SampleOpticalDepth = medium.extinction * dt;
+		const vec3 SampleTransmittance = exp(-SampleOpticalDepth);
+		OpticalDepth += SampleOpticalDepth;
+
+		float pHeight = length(P);
 		const vec3 UpVector = P / pHeight;
 		float SunZenithCosAngle = dot(SunDir, UpVector);
 		vec2 uv;
 		LutTransmittanceParamsToUv(pHeight, SunZenithCosAngle, uv);
-		//float3 TransmittanceToSun = TransmittanceLutTexture.SampleLevel(samplerLinearClamp, uv, 0).rgb;
-        vec3 TransmittanceToSun = texture(uImage, vUV).rgb;
-		const float NdotL = clamp(dot(normalize(UpVector), normalize(SunDir)), 0, 1);
-        float throughput = 1.f;
-		L += globalL * TransmittanceToSun * throughput * NdotL * PARAM.GroundAlbedo / PI;
+		vec3 TransmittanceToSun =  texture(uImage, uv, 0).rgb;
+
+		vec3 PhaseTimesScattering;
+		if (MieRayPhase)
+		{
+			PhaseTimesScattering = medium.scatteringMie * MiePhaseValue + medium.scatteringRay * RayleighPhaseValue;
+		}
+		else
+		{
+			PhaseTimesScattering = medium.scattering * uniformPhase;
+		}
+
+		// Earth shadow 
+		float tEarth = raySphereIntersectNearest(P, SunDir, earthO + PLANET_RADIUS_OFFSET * UpVector, PARAM.BottomRadius);
+		float earthShadow = tEarth >= 0.0f ? 0.0f : 1.0f;
+
+		// Dual scattering for multi scattering 
+
+		vec3 multiScatteredLuminance = vec3(0.0f);
+
+		float shadow = 1.0f;
+		vec3 S = globalL * (earthShadow * shadow * TransmittanceToSun * PhaseTimesScattering + multiScatteredLuminance * medium.scattering);
+
+		vec3 MS = medium.scattering * 1;
+		vec3 MSint = (MS - MS * SampleTransmittance) / medium.extinction;
+	//	result.MultiScatAs1 += throughput * MSint;
+
+		// Evaluate input to multi scattering 
+		{
+			// vec3 newMS;
+
+			// newMS = earthShadow * TransmittanceToSun * medium.scattering * uniformPhase * 1;
+			// result.NewMultiScatStep0Out += throughput * (newMS - newMS * SampleTransmittance) / medium.extinction;
+			// //	result.NewMultiScatStep0Out += SampleTransmittance * throughput * newMS * dt;
+
+			// newMS = medium.scattering * uniformPhase * multiScatteredLuminance;
+			// result.NewMultiScatStep1Out += throughput * (newMS - newMS * SampleTransmittance) / medium.extinction;
+			//	result.NewMultiScatStep1Out += SampleTransmittance * throughput * newMS * dt;
+		}
+
+		// See slide 28 at http://www.frostbite.com/2015/08/physically-based-unified-volumetric-rendering-in-frostbite/ 
+		vec3 Sint = (S - S * SampleTransmittance) / medium.extinction;	// integrate along the current step segment 
+		L += throughput * Sint;														// accumulate and also take into account the transmittance from previous steps
+		throughput *= SampleTransmittance;
+		tPrev = t;
 	}
+    
 	return L;
 }
 
@@ -328,36 +410,35 @@ void main()
     FragColor = texture(uImage, vUV);
   // if(FragColor.rgb == vec3(0))
    // FragColor = vec4(1,0,0,1);
-    return;
+   // return;
     vec2 pixPos = gl_FragCoord.xy;
-    // Compute camera position from LUT coords
-	vec2 uv = (pixPos) / vec2(TRANSMITTANCE_TEXTURE_WIDTH, TRANSMITTANCE_TEXTURE_HEIGHT);
-	float viewHeight;
-	float viewZenithCosAngle;
-    UvToLutTransmittanceParams(viewHeight, viewZenithCosAngle, uv);
-    
-     //  A few extra needed constants
-	vec3 WorldPos = vec3(0.0f, 0.0f, viewHeight);
-	vec3 WorldDir = vec3(0.0f, sqrt(1.0 - viewZenithCosAngle * viewZenithCosAngle), viewZenithCosAngle);
 
+    vec3 camera = vec3(0, 110, 0.5);
+    vec2 ttUV = pixPos / vec2(TRANSMITTANCE_TEXTURE_WIDTH, TRANSMITTANCE_TEXTURE_HEIGHT);
+    vec3 ClipSpace = vec3(ttUV * vec2(2.0, -2.0) - vec2(1.0, -1.0), 1.0);
+	vec4 HViewPos = invProjMat * vec4(ClipSpace, 1.0);
+    vec4 temp = invViewMat * HViewPos;
+	vec3 WorldDir = normalize(temp.xyz / temp.w);
+    //FragColor.rgb = WorldDir;
+   // FragColor.a = 1;
+   // return;
+     //  A few extra needed constants
+	vec3 WorldPos = camera + vec3(0.0f, 0.0f, PARAM.BottomRadius);
+	  
 	const bool ground = false;
 	const float SampleCountIni = 40.0f;	// Can go a low as 10 sample but energy lost starts to be visible.
 	const float DepthBufferValue = -1.0;
 	const bool VariableSampleCount = false;
-	const bool MieRayPhase = false;
+	const bool MieRayPhase = true;
     
-    vec3 sun_direction = vec3(0, 0.0, 1);
+    vec3 sun_direction = normalize(vec3(1, 1.0, 0));
+   
     vec3 L = IntegrateScatteredLuminance(pixPos, WorldPos, WorldDir, sun_direction, 
     ground, SampleCountIni, DepthBufferValue, VariableSampleCount, MieRayPhase, 9000000.0f);
     
-    FragColor = vec4(L,1);
-    
-    //FragColor.rg = vec2(viewHeight, viewZenithCosAngle);
-    //FragColor.rgb = FragColor.rgb  / 1000900000000000000000008989989800;// exp(-transmittance);
+    FragColor = 10.0 * vec4(L,1);
     FragColor.a = 1;
-   // FragColor.rg = vUV;
-    //if(transmittance.r < 10.1)
-    // FragColor = vec4(1,0,0,1);
+    
  #if 0   
     if(PARAM.BottomRadius == 6360.0f)
     if(PARAM.TopRadius == 6460.0f)

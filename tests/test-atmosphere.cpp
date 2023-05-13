@@ -84,6 +84,9 @@ struct UBO
 {
 	mat4 MVP;
 	mat4 inversMVP;
+	mat4 projectMat;
+	mat4 invProjMat;
+	mat4 invViewMat;
 } ubo;
 
 struct TestRenderGraph : Granite::Application, Granite::EventHandler
@@ -147,6 +150,15 @@ void TestRenderGraph::on_swapchain_changed(const SwapchainParameterEvent &swap)
 	delta.x = max(delta.x, 0.f), delta.y = max(delta.y, 0.f), delta.z = max(delta.z, 0.f);
 	push.MieAbsorption = delta;
 	int sz = sizeof(push);
+
+	Camera cam;
+	cam.look_at(vec3(0.0f, -1.f, .5f), vec3(0.0f, .0f, .5f), vec3(0.0f, .0f, 1.f));
+	cam.set_depth_range(1.0f, 10000.0f);
+	cam.set_fovy(0.5f);
+
+	ubo.projectMat = cam.get_projection();
+	ubo.invProjMat = inverse(ubo.projectMat);
+	ubo.invViewMat = inverse(cam.get_view());
 
 	//-------------------------------------------------------------------------------TransmittanceLut
 	auto &transmittance = graph.add_pass("TransmittanceLut", RENDER_GRAPH_QUEUE_GRAPHICS_BIT);

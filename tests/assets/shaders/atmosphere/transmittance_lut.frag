@@ -5,8 +5,8 @@ layout(location = 0) in vec2 vUV;
 // #define TRANSMITTANCE_TEXTURE_WIDTH  256
 // #define TRANSMITTANCE_TEXTURE_HEIGHT 64
 
-#define TRANSMITTANCE_TEXTURE_WIDTH  1280
-#define TRANSMITTANCE_TEXTURE_HEIGHT 720
+#define TRANSMITTANCE_TEXTURE_WIDTH  1280.f
+#define TRANSMITTANCE_TEXTURE_HEIGHT 720.f
 
 #define PI 3.1415926535897932384626433832795f
 
@@ -59,8 +59,11 @@ layout(push_constant, std430) uniform AtmosphereParameters
 
 layout(std140, set = 0, binding = 0) uniform UBO
 {
-    mat4 MVP;
-    mat4 inversMVP;
+	mat4 MVP;
+	mat4 inversMVP;
+	mat4 projectMat;
+	mat4 invProjMat;
+    mat4 invViewMat;
 };
 
 vec2 RayMarchMinMaxSPP = vec2(4, 14);
@@ -349,7 +352,7 @@ void main()
 	const bool VariableSampleCount = false;
 	const bool MieRayPhase = false;
     
-    vec3 sun_direction = normalize(vec3(1, 1.0, 1));
+    vec3 sun_direction = normalize(vec3(1, 1.0, 0));
     vec3 transmittance = IntegrateScatteredLuminance(pixPos, WorldPos, WorldDir, sun_direction, 
     ground, SampleCountIni, DepthBufferValue, VariableSampleCount, MieRayPhase, 9000000.0f);
     
