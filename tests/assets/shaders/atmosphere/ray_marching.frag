@@ -3,11 +3,6 @@ layout(location = 0) out vec4 FragColor;
 layout(location = 0) in  vec2 vUV;
 
 layout(set = 0, binding = 0) uniform sampler2D uImage;
-// #define TRANSMITTANCE_TEXTURE_WIDTH  256
-// #define TRANSMITTANCE_TEXTURE_HEIGHT 64
-
-#define TRANSMITTANCE_TEXTURE_WIDTH  1280.f
-#define TRANSMITTANCE_TEXTURE_HEIGHT 720.f
 
 #define PI 3.1415926535897932384626433832795f
 #define PLANET_RADIUS_OFFSET 0.01f
@@ -54,8 +49,8 @@ layout(push_constant, std430) uniform AtmosphereParameters
 	float AbsorptionDensity1LinearTerm;
     
 	vec2 RayMarchMinMaxSPP;
-	int screenWidth;
-	int screenHeight;
+	float screenWidth;
+	float screenHeight;
 } PARAM;
 
 
@@ -222,8 +217,7 @@ void LutTransmittanceParamsToUv(in float viewHeight, in float viewZenithCosAngle
 	float x_mu = (d - d_min) / (d_max - d_min);
 	float x_r = rho / H;
 
-	uv = vec2(x_mu, x_r);
-	//uv = float2(fromUnitToSubUvs(uv.x, TRANSMITTANCE_TEXTURE_WIDTH), fromUnitToSubUvs(uv.y, TRANSMITTANCE_TEXTURE_HEIGHT)); // No real impact so off
+	uv = vec2(x_mu, x_r);	
 }
 
 vec3 IntegrateScatteredLuminance(
@@ -380,20 +374,7 @@ vec3 IntegrateScatteredLuminance(
 		vec3 MS = medium.scattering * 1;
 		vec3 MSint = (MS - MS * SampleTransmittance) / medium.extinction;
 	//	result.MultiScatAs1 += throughput * MSint;
-
-		// Evaluate input to multi scattering 
-		{
-			// vec3 newMS;
-
-			// newMS = earthShadow * TransmittanceToSun * medium.scattering * uniformPhase * 1;
-			// result.NewMultiScatStep0Out += throughput * (newMS - newMS * SampleTransmittance) / medium.extinction;
-			// //	result.NewMultiScatStep0Out += SampleTransmittance * throughput * newMS * dt;
-
-			// newMS = medium.scattering * uniformPhase * multiScatteredLuminance;
-			// result.NewMultiScatStep1Out += throughput * (newMS - newMS * SampleTransmittance) / medium.extinction;
-			//	result.NewMultiScatStep1Out += SampleTransmittance * throughput * newMS * dt;
-		}
-
+    
 		// See slide 28 at http://www.frostbite.com/2015/08/physically-based-unified-volumetric-rendering-in-frostbite/ 
 		vec3 Sint = (S - S * SampleTransmittance) / medium.extinction;	// integrate along the current step segment 
 		L += throughput * Sint;														// accumulate and also take into account the transmittance from previous steps
@@ -413,8 +394,8 @@ void main()
    // return;
     vec2 pixPos = gl_FragCoord.xy;
 
-    vec3 camera = vec3(0, 110, 0.5);
-    vec2 ttUV = pixPos / vec2(TRANSMITTANCE_TEXTURE_WIDTH, TRANSMITTANCE_TEXTURE_HEIGHT);
+    vec3 camera = vec3(0, 50, 0.5);
+    vec2 ttUV = pixPos / vec2(PARAM.screenWidth, PARAM.screenHeight);
     vec3 ClipSpace = vec3(ttUV * vec2(2.0, -2.0) - vec2(1.0, -1.0), 1.0);
 	vec4 HViewPos = invProjMat * vec4(ClipSpace, 1.0);
     vec4 temp = invViewMat * HViewPos;
@@ -436,7 +417,7 @@ void main()
     vec3 L = IntegrateScatteredLuminance(pixPos, WorldPos, WorldDir, sun_direction, 
     ground, SampleCountIni, DepthBufferValue, VariableSampleCount, MieRayPhase, 9000000.0f);
     
-    FragColor = 10.0 * vec4(L,1);
+    FragColor = 5.0 * vec4(L,1);
     FragColor.a = 1;
     
  #if 0   

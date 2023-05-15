@@ -76,8 +76,8 @@ struct AtmosphereParameters
 	float AbsorptionDensity1LinearTerm = -1.0f / 15.0f;
 
 	vec2 RayMarchMinMaxSPP = vec2(4, 14);
-	int screenWidth = 1280;
-	int screenHeight = 720;
+	float screenWidth = 1280;
+	float screenHeight = 720;
 } push;
 
 struct UBO
@@ -152,8 +152,9 @@ void TestRenderGraph::on_swapchain_changed(const SwapchainParameterEvent &swap)
 	int sz = sizeof(push);
 
 	Camera cam;
-	cam.look_at(vec3(0.0f, -1.f, .5f), vec3(0.0f, .0f, .5f), vec3(0.0f, .0f, 1.f));
-	cam.set_depth_range(1.0f, 10000.0f);
+	//为什么up要是相反的?
+	cam.look_at(vec3(0.0f, 50.f, -1.5f), vec3(0.0f, .0f, .5f), vec3(0.0f, .0f, -1.f));
+	cam.set_depth_range(.1f, 10000.0f);
 	cam.set_fovy(0.5f);
 
 	ubo.projectMat = cam.get_projection();
@@ -164,6 +165,9 @@ void TestRenderGraph::on_swapchain_changed(const SwapchainParameterEvent &swap)
 	auto &transmittance = graph.add_pass("TransmittanceLut", RENDER_GRAPH_QUEUE_GRAPHICS_BIT);
 	{
 		AttachmentInfo back;
+		back.size_class = Absolute;
+		back.size_x = 256;
+		back.size_y = 64;
 		back.format = VK_FORMAT_R32G32B32A32_SFLOAT;
 		transmittance.add_color_output("TransmittanceLut", back);
 		transmittance.set_build_render_pass(

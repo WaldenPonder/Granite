@@ -2,11 +2,8 @@
 layout(location = 0) out vec4 FragColor;
 layout(location = 0) in vec2 vUV;
 
-// #define TRANSMITTANCE_TEXTURE_WIDTH  256
-// #define TRANSMITTANCE_TEXTURE_HEIGHT 64
-
-#define TRANSMITTANCE_TEXTURE_WIDTH  1280.f
-#define TRANSMITTANCE_TEXTURE_HEIGHT 720.f
+#define TRANSMITTANCE_TEXTURE_WIDTH  256.0f
+#define TRANSMITTANCE_TEXTURE_HEIGHT 64.0f
 
 #define PI 3.1415926535897932384626433832795f
 
@@ -52,8 +49,8 @@ layout(push_constant, std430) uniform AtmosphereParameters
 	float AbsorptionDensity1LinearTerm;
     
 	vec2 RayMarchMinMaxSPP;
-	int screenWidth;
-	int screenHeight;
+	float screenWidth;
+	float screenHeight;
 } PARAM;
 
 
@@ -204,7 +201,7 @@ MediumSampleRGB sampleMediumRGB(in vec3 WorldPos)
 	s.extinction = s.extinctionMie + s.extinctionRay + s.extinctionOzo;
 	s.albedo = getAlbedo(s.scattering, s.extinction);  
 
-    //s.extinction =  s.extinctionMie;
+    s.extinction =  s.extinctionMie;
 	return s;
 }
 
@@ -254,7 +251,7 @@ vec3 IntegrateScatteredLuminance(
 				tMax = tDepth;
 			}
             
-            return vec3(1, 0, 1);
+          //  return vec3(1, 0, 1);
 		}
 		//		if (VariableSampleCount && ClipSpace.z == 1.0f)
 		//			return result;
