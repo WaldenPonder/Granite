@@ -20,6 +20,9 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include "../cereal/archives/json.hpp"
+#include "../cereal/cereal.hpp"
+#include "../cereal/types/memory.hpp"
 #include "application.hpp"
 #include "command_buffer.hpp"
 #include "device.hpp"
@@ -29,10 +32,28 @@
 #include "render_context.hpp"
 #include "render_graph.hpp"
 #include "task_composer.hpp"
-#include <string.h>
+#include <fstream>
 
 using namespace Granite;
 using namespace Vulkan;
+
+namespace cereal
+{
+template <class Archive>
+void serialize(Archive &ar, muglm::vec2 &t)
+{
+	ar(CEREAL_NVP(t.x));
+	ar(CEREAL_NVP(t.y));
+}
+
+template <class Archive>
+void serialize(Archive &ar, muglm::vec3 &t)
+{
+	ar(CEREAL_NVP(t.x));
+	ar(CEREAL_NVP(t.y));
+	ar(CEREAL_NVP(t.z));
+}
+} // namespace cereal
 
 struct AtmosphereParameters
 {
@@ -44,7 +65,7 @@ struct AtmosphereParameters
 	// Rayleigh scattering exponential distribution scale in the atmosphere
 	float RayleighDensityExpScale = -1.f / 8.0f;
 
-		// Another medium type in the atmosphere
+	// Another medium type in the atmosphere
 	float AbsorptionDensity0LayerWidth = 25.f;
 
 	// Rayleigh scattering coefficients
@@ -52,7 +73,7 @@ struct AtmosphereParameters
 
 	// Mie scattering exponential distribution scale in the atmosphere
 	float MieDensityExpScale = -1.f / 1.2f;
-	
+
 	// Mie scattering coefficients
 	vec3 MieScattering = vec3(0.003996f, 0.003996f, 0.003996f);
 
@@ -61,12 +82,13 @@ struct AtmosphereParameters
 	// Mie extinction coefficients
 	vec3 MieExtinction = vec3(0.00443999982, 0.00443999982, 0.00443999982);
 	float AbsorptionDensity0LinearTerm = 1.0f / 15.0f;
-	
+
 	// Mie absorption coefficients
-	vec3 MieAbsorption;;
+	vec3 MieAbsorption;
+	;
 	// Mie phase function excentricity
 	float MiePhaseG = 0.8f;
-		
+
 	// This other medium only absorb light, e.g. useful to represent ozone in the earth atmosphere
 	vec3 AbsorptionExtinction = vec3(0.000650f, 0.001881f, 0.000085f);
 	float AbsorptionDensity1ConstantTerm = 8.0f / 3.0f;
@@ -76,8 +98,32 @@ struct AtmosphereParameters
 	float AbsorptionDensity1LinearTerm = -1.0f / 15.0f;
 
 	vec2 RayMarchMinMaxSPP = vec2(4, 14);
-	float screenWidth = 1280;
-	float screenHeight = 720;
+	float screenWidth = 1280.f;
+	float screenHeight = 720.f;
+
+	template <class Archive>
+	void serialize(Archive &ar)
+	{
+		ar(CEREAL_NVP(BottomRadius));
+		ar(CEREAL_NVP(TopRadius));
+		ar(CEREAL_NVP(RayleighDensityExpScale));
+		ar(CEREAL_NVP(AbsorptionDensity0LayerWidth));
+		ar(CEREAL_NVP(RayleighScattering));
+		ar(CEREAL_NVP(MieDensityExpScale));
+		ar(CEREAL_NVP(MieScattering));
+		ar(CEREAL_NVP(AbsorptionDensity0ConstantTerm));
+		ar(CEREAL_NVP(MieExtinction));
+		ar(CEREAL_NVP(AbsorptionDensity0LinearTerm));
+		ar(CEREAL_NVP(MieAbsorption));
+		ar(CEREAL_NVP(MiePhaseG));
+		ar(CEREAL_NVP(AbsorptionExtinction));
+		ar(CEREAL_NVP(AbsorptionDensity1ConstantTerm));
+		ar(CEREAL_NVP(GroundAlbedo));
+		ar(CEREAL_NVP(AbsorptionDensity1LinearTerm));
+		ar(CEREAL_NVP(RayMarchMinMaxSPP));
+		ar(CEREAL_NVP(screenWidth));
+		ar(CEREAL_NVP(screenHeight));
+	}
 } push;
 
 struct UBO
@@ -96,9 +142,6 @@ struct TestRenderGraph : Granite::Application, Granite::EventHandler
 		EVENT_MANAGER_REGISTER_LATCH(TestRenderGraph, on_swapchain_changed, on_swapchain_destroyed,
 		                             SwapchainParameterEvent);
 		EVENT_MANAGER_REGISTER_LATCH(TestRenderGraph, on_device_created, on_device_destroyed, DeviceCreatedEvent);
-
-		//imageId =
-		//    GRANITE_ASSET_MANAGER()->register_image_resource(*GRANITE_FILESYSTEM(), "J:\\tt2.png", ImageClass::Color);
 	}
 
 	void on_device_created(const DeviceCreatedEvent &e);
@@ -173,6 +216,11 @@ void TestRenderGraph::on_swapchain_changed(const SwapchainParameterEvent &swap)
 		transmittance.set_build_render_pass(
 		    [&](CommandBuffer &cmd_buffer)
 		    {
+			    std::ifstream os("J:/out.json");
+
+			    cereal::JSONInputArchive ar(os);
+			    ar(push);
+
 			    auto *cmd = &cmd_buffer;
 			    auto *global = static_cast<UBO *>(cmd->allocate_constant_data(0, 0, sizeof(UBO)));
 			    *global = ubo;
@@ -183,7 +231,6 @@ void TestRenderGraph::on_swapchain_changed(const SwapchainParameterEvent &swap)
 			    CommandBufferUtil::draw_fullscreen_quad(*cmd);
 		    });
 	}
-
 
 	//-------------------------------------------------------------------------------RayMarching
 	auto &rayMarching = graph.add_pass("RayMarching", RENDER_GRAPH_QUEUE_GRAPHICS_BIT);
@@ -196,7 +243,7 @@ void TestRenderGraph::on_swapchain_changed(const SwapchainParameterEvent &swap)
 		    {
 			    auto *cmd = &cmd_buffer;
 			    auto &input = graph.get_physical_texture_resource(transmittance_lut);
-		    	cmd->set_texture(0, 0, input, StockSampler::LinearClamp);
+			    cmd->set_texture(0, 0, input, StockSampler::LinearClamp);
 			    auto *global = static_cast<UBO *>(cmd->allocate_constant_data(0, 1, sizeof(UBO)));
 			    *global = ubo;
 			    cmd->push_constants(&push, 0, sizeof(push));
