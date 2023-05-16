@@ -216,7 +216,7 @@ void TestRenderGraph::on_swapchain_changed(const SwapchainParameterEvent &swap)
 		transmittance.set_build_render_pass(
 		    [&](CommandBuffer &cmd_buffer)
 		    {
-			    std::ifstream os("J:/out.json");
+			    std::ifstream os("../assets/atmosphere.json");
 
 			    cereal::JSONInputArchive ar(os);
 			    ar(push);

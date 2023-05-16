@@ -1,0 +1,50 @@
+{
+    "value0": {
+        "BottomRadius": 6360.0,
+        "TopRadius": 6460.0,
+        "RayleighDensityExpScale": -0.125,
+        "AbsorptionDensity0LayerWidth": 25.0,
+        "RayleighScattering": {
+            "t.x": 0.005801999941468239,
+            "t.y": 0.013558000326156617,
+            "t.z": 0.03310000151395798
+        },
+        "MieDensityExpScale": -0.8333333134651184,
+        "MieScattering": {
+            "t.x": 0.003996000159531832,
+            "t.y": 0.003996000159531832,
+            "t.z": 0.003996000159531832
+        },
+        "AbsorptionDensity0ConstantTerm": -0.6666666865348816,
+        "MieExtinction": {
+            "t.x": 0.00443999981507659,
+            "t.y": 0.00443999981507659,
+            "t.z": 0.00443999981507659
+        },
+        "AbsorptionDensity0LinearTerm": 0.06666667014360428,
+        "MieAbsorption": {
+            "t.x": 0.0,
+            "t.y": 0.0,
+            "t.z": 0.0
+        },
+        "MiePhaseG": 0.800000011920929,
+        "AbsorptionExtinction": {
+            "t.x": 0.0006500000017695129,
+            "t.y": 0.0018810000037774444,
+            "t.z": 0.00008499999967170879
+        },
+        "AbsorptionDensity1ConstantTerm": 2.6666667461395265,
+        "GroundAlbedo": {
+            "t.x": 0.0,
+            "t.y": 0.0,
+            "t.z": 0.0
+        },
+        "AbsorptionDensity1LinearTerm": -0.06666667014360428,
+        "RayMarchMinMaxSPP": {
+            "t.x": 4.0,
+            "t.y": 14.0
+        },
+        "screenWidth": 1280.0,
+        "screenHeight": 720.0
+    }
+}
