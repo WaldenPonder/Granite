@@ -56,6 +56,7 @@ layout(push_constant, std430) uniform AtmosphereParameters
 
 layout(std140, set = 0, binding = 0) uniform UBO
 {
+    vec4 camarePos;
 	mat4 MVP;
 	mat4 inversMVP;
 	mat4 projectMat;

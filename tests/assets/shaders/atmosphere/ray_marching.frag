@@ -55,7 +55,8 @@ layout(push_constant, std430) uniform AtmosphereParameters
 
 
 layout(std140, set = 0, binding = 1) uniform UBO
-{
+{   
+    vec4 camarePos;
 	mat4 MVP;
 	mat4 inversMVP;
 	mat4 projectMat;
@@ -394,7 +395,7 @@ void main()
    // return;
     vec2 pixPos = gl_FragCoord.xy;
 
-    vec3 camera = vec3(0, 50, 0.5);
+    vec3 camera = camarePos.xyz;// vec3(0, 150, 0.9);
     vec2 ttUV = pixPos / vec2(PARAM.screenWidth, PARAM.screenHeight);
     vec3 ClipSpace = vec3(ttUV * vec2(2.0, -2.0) - vec2(1.0, -1.0), 1.0);
 	vec4 HViewPos = invProjMat * vec4(ClipSpace, 1.0);
@@ -412,7 +413,7 @@ void main()
 	const bool VariableSampleCount = false;
 	const bool MieRayPhase = true;
     
-    vec3 sun_direction = normalize(vec3(1, 1.0, 0));
+    vec3 sun_direction = normalize(vec3(0, .90, 0.4));
    
     vec3 L = IntegrateScatteredLuminance(pixPos, WorldPos, WorldDir, sun_direction, 
     ground, SampleCountIni, DepthBufferValue, VariableSampleCount, MieRayPhase, 9000000.0f);

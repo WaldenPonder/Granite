@@ -4,8 +4,8 @@
 #include "scene.hpp"
 #include "muglm/matrix_helper.hpp"
 
-const float SCROLL_FACTOR = 200.0;
-const float FACTOR = 800.0;
+float SCROLL_FACTOR = 2.0;
+float FACTOR = 8.0;
 
 namespace Granite
 {
@@ -31,8 +31,10 @@ vec3 tbc(double absX, double absY, unsigned width, unsigned height)
 	return vec3(v.x, -v.y, 0.0);
 }
 
-Trackball::Trackball()
+Trackball::Trackball(float scrollFactor, float factor)
 {
+	SCROLL_FACTOR = scrollFactor;
+	FACTOR = factor;
 	EVENT_MANAGER_REGISTER(Trackball, on_mouse_move, MouseMoveEvent);
 	EVENT_MANAGER_REGISTER(Trackball, on_scroll, ScrollEvent);
 	EVENT_MANAGER_REGISTER(Trackball, on_input_state, InputStateEvent);

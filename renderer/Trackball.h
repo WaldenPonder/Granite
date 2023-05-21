@@ -8,7 +8,7 @@ namespace Granite
     class Trackball : public Camera, public EventHandler
     {
 	public:
-		Trackball();
+	    Trackball(float scrollFactor = 1.0, float factor = 1);
 
 		void set_scene(Scene* scene_);
     	

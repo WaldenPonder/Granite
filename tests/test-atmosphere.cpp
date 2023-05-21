@@ -20,6 +20,7 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include "Trackball.h"
 #include "../cereal/archives/json.hpp"
 #include "../cereal/cereal.hpp"
 #include "../cereal/types/memory.hpp"
@@ -85,7 +86,7 @@ struct AtmosphereParameters
 
 	// Mie absorption coefficients
 	vec3 MieAbsorption;
-	;
+	
 	// Mie phase function excentricity
 	float MiePhaseG = 0.8f;
 
@@ -128,6 +129,7 @@ struct AtmosphereParameters
 
 struct UBO
 {
+	vec4 camarePos;
 	mat4 MVP;
 	mat4 inversMVP;
 	mat4 projectMat;
@@ -156,6 +158,7 @@ struct TestRenderGraph : Granite::Application, Granite::EventHandler
 	ImageHandle render_target;
 	RenderGraph graph;
 	ImageAssetID imageId;
+	Trackball cam;
 };
 
 void TestRenderGraph::on_device_destroyed(const DeviceCreatedEvent &e)
@@ -194,15 +197,11 @@ void TestRenderGraph::on_swapchain_changed(const SwapchainParameterEvent &swap)
 	push.MieAbsorption = delta;
 	int sz = sizeof(push);
 
-	Camera cam;
 	//为什么up要是相反的?
-	cam.look_at(vec3(0.0f, 50.f, -1.5f), vec3(0.0f, .0f, .5f), vec3(0.0f, .0f, -1.f));
+	cam.look_at(vec3(0.0f, 150.f, .9f), vec3(0.0f, .0f, .5f), vec3(0.0f, .0f, -1.f));
 	cam.set_depth_range(.1f, 10000.0f);
-	cam.set_fovy(0.5f);
+	cam.set_fovy(0.6f * half_pi<float>());
 
-	ubo.projectMat = cam.get_projection();
-	ubo.invProjMat = inverse(ubo.projectMat);
-	ubo.invViewMat = inverse(cam.get_view());
 
 	//-------------------------------------------------------------------------------TransmittanceLut
 	auto &transmittance = graph.add_pass("TransmittanceLut", RENDER_GRAPH_QUEUE_GRAPHICS_BIT);
@@ -220,6 +219,11 @@ void TestRenderGraph::on_swapchain_changed(const SwapchainParameterEvent &swap)
 
 			    cereal::JSONInputArchive ar(os);
 			    ar(push);
+
+		    	ubo.camarePos = vec4(cam.get_position(), 1);
+			    ubo.projectMat = cam.get_projection();
+			    ubo.invProjMat = inverse(ubo.projectMat);
+			    ubo.invViewMat = inverse(cam.get_view());
 
 			    auto *cmd = &cmd_buffer;
 			    auto *global = static_cast<UBO *>(cmd->allocate_constant_data(0, 0, sizeof(UBO)));
