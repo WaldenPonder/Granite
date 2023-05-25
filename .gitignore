@@ -50,3 +50,8 @@ cache
 .vs
 Debug
 x64
+third_party/fsr2
+third_party/meshoptimizer
+third_party/muFFT
+third_party/shaderc
+third_party/spirv-cross

@@ -231,7 +231,7 @@ void TestRenderGraph::on_swapchain_changed(const SwapchainParameterEvent &swap)
 			    cmd->push_constants(&push, 0, sizeof(push));
 
 			    CommandBufferUtil::setup_fullscreen_quad(*cmd, "builtin://shaders/quad.vert",
-			                                             "assets://shaders/atmosphere/transmittance_lut.frag", {});
+			                                             "builtin://shaders/atmosphere/transmittance_lut.frag", {});
 			    CommandBufferUtil::draw_fullscreen_quad(*cmd);
 		    });
 	}
@@ -253,7 +253,7 @@ void TestRenderGraph::on_swapchain_changed(const SwapchainParameterEvent &swap)
 			    cmd->push_constants(&push, 0, sizeof(push));
 
 			    CommandBufferUtil::setup_fullscreen_quad(*cmd, "builtin://shaders/quad.vert",
-			                                             "assets://shaders/atmosphere/ray_marching.frag", {});
+			                                             "builtin://shaders/atmosphere/ray_marching.frag", {});
 			    CommandBufferUtil::draw_fullscreen_quad(*cmd);
 		    });
 	}
