@@ -267,7 +267,7 @@ vec3 IntegrateScatteredLuminance(
 				tMax = tDepth;
 			}
             
-            return vec3(1, 0, 1);
+            return vec3(0, 0, 0);
 		}
 		//		if (VariableSampleCount && ClipSpace.z == 1.0f)
 		//			return result;
@@ -398,11 +398,14 @@ void main()
 	vec4 HViewPos = invProjMat * vec4(ClipSpace, 1.0);
     vec4 temp = invViewMat * HViewPos;
 	vec3 WorldDir = normalize(temp.xyz / temp.w);
+    FragColor = vec4(WorldDir, 1);
+    
+   // return;
     
    //   FragColor = texture(uImage, ttUV) ;
   // if(FragColor.rgb == vec3(0))
-   // FragColor = vec4(1,0,0,1);
- //  return;
+  // FragColor = vec4(ttUV,0,1);
+ // return;
     //FragColor.rgb = WorldDir;
    // FragColor.a = 1;
    // return;
@@ -412,16 +415,22 @@ void main()
 	const bool ground = false;
 	const float SampleCountIni = 40.0f;	// Can go a low as 10 sample but energy lost starts to be visible.
 	const float DepthBufferValue = -1.0;
-	const bool VariableSampleCount = false;
+	const bool VariableSampleCount = true;
 	const bool MieRayPhase = true;
     
-    vec3 sun_direction = normalize(vec3(1, 1, 1.));
+    vec3 sun_direction = normalize(vec3(1, 10.9784, 1.04875));
    
     vec3 L = IntegrateScatteredLuminance(pixPos, WorldPos, WorldDir, sun_direction, 
     ground, SampleCountIni, DepthBufferValue, VariableSampleCount, MieRayPhase, 9000000.0f);
     
-    FragColor = 5.0 * vec4(L,1);
-    FragColor.a = 1;
+    vec3 white_point = vec3(1.08241, 0.96756, 0.95003);
+	float exposure = 10.0;
+    vec3 tmp2 = vec3(1.0)- exp(-L / white_point * exposure);
+    vec3 tmp = pow(tmp2, vec3(1.0 / 1.2));
+	FragColor = vec4(tmp, 1.0 );
+    
+   // FragColor = 5.0 * vec4(,1);
+   // FragColor.a = 1;
     
  #if 0   
     if(PARAM.BottomRadius == 6360.0f)

@@ -198,8 +198,8 @@ void TestRenderGraph::on_swapchain_changed(const SwapchainParameterEvent &swap)
 	int sz = sizeof(push);
 
 	//为什么up要是相反的?
-	cam.look_at(vec3(0.0f, 150.f, .9f), vec3(0.0f, .0f, .5f), vec3(0.0f, .0f, -1.f));
-	cam.set_depth_range(.1f, 10000.0f);
+	cam.look_at(vec3(0.0f, -1, .5f), vec3(0.0f, .0f, .5f), vec3(0.0f, .0f, 1.f));
+	cam.set_depth_range(.1f, 20000.0f);
 	cam.set_fovy(0.6f * half_pi<float>());
 
 

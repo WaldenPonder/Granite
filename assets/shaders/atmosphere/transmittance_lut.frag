@@ -349,7 +349,8 @@ void main()
 	const bool VariableSampleCount = false;
 	const bool MieRayPhase = false;
     
-    vec3 sun_direction = normalize(vec3(1, 1.0, 1));
+   // vec3 sun_direction = normalize(vec3(1, 1.0, 1));
+   vec3 sun_direction = normalize(vec3(0, 0.9784, 0.04875));
     vec3 transmittance = IntegrateScatteredLuminance(pixPos, WorldPos, WorldDir, sun_direction, 
     ground, SampleCountIni, DepthBufferValue, VariableSampleCount, MieRayPhase, 9000000.0f);
     
