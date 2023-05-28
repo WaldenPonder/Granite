@@ -389,7 +389,6 @@ vec3 IntegrateScatteredLuminance(
 
 void main()
 {
-
     vec2 pixPos = gl_FragCoord.xy;
 
     vec3 camera = camarePos.xyz;// vec3(0, 150, 0.9);
@@ -398,17 +397,7 @@ void main()
 	vec4 HViewPos = invProjMat * vec4(ClipSpace, 1.0);
     vec4 temp = invViewMat * HViewPos;
 	vec3 WorldDir = normalize(temp.xyz / temp.w);
-    FragColor = vec4(WorldDir, 1);
-    
-   // return;
-    
-   //   FragColor = texture(uImage, ttUV) ;
-  // if(FragColor.rgb == vec3(0))
-  // FragColor = vec4(ttUV,0,1);
- // return;
-    //FragColor.rgb = WorldDir;
-   // FragColor.a = 1;
-   // return;
+
      //  A few extra needed constants
 	vec3 WorldPos = camera + vec3(0.0f, 0.0f, PARAM.BottomRadius);
 	  
@@ -418,7 +407,9 @@ void main()
 	const bool VariableSampleCount = true;
 	const bool MieRayPhase = true;
     
-    vec3 sun_direction = normalize(vec3(1, 10.9784, 1.04875));
+    //太阳方向
+    vec3 sun_direction = normalize(vec3(1, 5.9784, 1.04875));
+    //sun_direction = normalize(vec3(1, 1, 1.0));
    
     vec3 L = IntegrateScatteredLuminance(pixPos, WorldPos, WorldDir, sun_direction, 
     ground, SampleCountIni, DepthBufferValue, VariableSampleCount, MieRayPhase, 9000000.0f);
@@ -426,11 +417,9 @@ void main()
     vec3 white_point = vec3(1.08241, 0.96756, 0.95003);
 	float exposure = 10.0;
     vec3 tmp2 = vec3(1.0)- exp(-L / white_point * exposure);
-    vec3 tmp = pow(tmp2, vec3(1.0 / 1.2));
+    vec3 tmp = pow(tmp2, vec3(1.0 / 1.02)); 
 	FragColor = vec4(tmp, 1.0 );
     
-   // FragColor = 5.0 * vec4(,1);
-   // FragColor.a = 1;
     
  #if 0   
     if(PARAM.BottomRadius == 6360.0f)
