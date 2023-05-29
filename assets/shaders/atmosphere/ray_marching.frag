@@ -408,8 +408,8 @@ void main()
 	const bool MieRayPhase = true;
     
     //太阳方向
-    vec3 sun_direction = normalize(vec3(1, 5.9784, 1.04875));
-    //sun_direction = normalize(vec3(1, 1, 1.0));
+    vec3 sun_direction = normalize(vec3(1, 9.9784, 1.04875));
+    //sun_direction = normalize(vec3(0, 0.7, 0.40));
    
     vec3 L = IntegrateScatteredLuminance(pixPos, WorldPos, WorldDir, sun_direction, 
     ground, SampleCountIni, DepthBufferValue, VariableSampleCount, MieRayPhase, 9000000.0f);

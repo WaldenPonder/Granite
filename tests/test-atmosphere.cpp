@@ -215,10 +215,9 @@ void TestRenderGraph::on_swapchain_changed(const SwapchainParameterEvent &swap)
 		transmittance.set_build_render_pass(
 		    [&](CommandBuffer &cmd_buffer)
 		    {
-			    std::ifstream os("../assets/atmosphere.json");
-
-			    cereal::JSONInputArchive ar(os);
-			    ar(push);
+			    //std::ifstream os("../assets/atmosphere.json");
+			   // cereal::JSONInputArchive ar(os);
+			   // ar(push);
 
 		    	ubo.camarePos = vec4(cam.get_position(), 1);
 			    ubo.projectMat = cam.get_projection();
