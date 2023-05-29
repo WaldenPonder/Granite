@@ -19,11 +19,16 @@
  * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+#define ENABLE_CEREAL false
 
 #include "Trackball.h"
+
+#if ENABLE_CEREAL
 #include "../cereal/archives/json.hpp"
 #include "../cereal/cereal.hpp"
 #include "../cereal/types/memory.hpp"
+#endif
+
 #include "application.hpp"
 #include "command_buffer.hpp"
 #include "device.hpp"
@@ -38,6 +43,7 @@
 using namespace Granite;
 using namespace Vulkan;
 
+#ifdef ENABLE_CEREAL
 namespace cereal
 {
 template <class Archive>
@@ -55,6 +61,7 @@ void serialize(Archive &ar, muglm::vec3 &t)
 	ar(CEREAL_NVP(t.z));
 }
 } // namespace cereal
+#endif
 
 struct AtmosphereParameters
 {
@@ -101,7 +108,7 @@ struct AtmosphereParameters
 	vec2 RayMarchMinMaxSPP = vec2(4, 14);
 	float screenWidth = 1280.f;
 	float screenHeight = 720.f;
-
+#ifdef ENABLE_CEREAL
 	template <class Archive>
 	void serialize(Archive &ar)
 	{
@@ -125,6 +132,7 @@ struct AtmosphereParameters
 		ar(CEREAL_NVP(screenWidth));
 		ar(CEREAL_NVP(screenHeight));
 	}
+#endif
 } push;
 
 struct UBO
