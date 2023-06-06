@@ -41,6 +41,12 @@ Trackball::Trackball(float scrollFactor, float factor)
 	EVENT_MANAGER_REGISTER_LATCH(Trackball, on_swapchain, on_swapchain, Vulkan::SwapchainParameterEvent);
 }
 
+void Trackball::set_factor(float scrollFactor, float factor)
+{
+	SCROLL_FACTOR = scrollFactor;
+	FACTOR = factor;
+}
+
 void Trackball::set_scene(Scene *scene_)
 {
 	scene = scene_;

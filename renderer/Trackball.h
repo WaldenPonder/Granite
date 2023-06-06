@@ -10,6 +10,7 @@ namespace Granite
 	public:
 	    Trackball(float scrollFactor = 1.0, float factor = 1);
 
+		void set_factor(float scrollFactor, float factor);
 		void set_scene(Scene* scene_);
     	
 	private:

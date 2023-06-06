@@ -342,15 +342,18 @@ SceneViewerApplication::SceneViewerApplication(const std::string &path, const st
 	animation_system = scene_loader.consume_animation_system();
 	context.set_lighting_parameters(&lighting);
 	fallback_depth_context.set_lighting_parameters(&fallback_lighting);
-	cam.set_depth_range(0.1f, 1000.0f);
+	cam.set_depth_range(0.1f, 10000.0f);
+	cam.set_factor(10.f, 10.f);
 
+#if 0
 	// Create a dummy background if there isn't any background.
 	if (scene_loader.get_scene().get_entity_pool().get_component_group<BackgroundComponent>().empty())
 	{
 		auto dome = Util::make_handle<Skybox>();
 		scene_loader.get_scene().create_renderable(dome, nullptr);
 	}
-	
+#endif
+
 	cam.set_scene(&scene_loader.get_scene());
 	auto *environment = scene_loader.get_scene().get_environment();
 	if (environment)
