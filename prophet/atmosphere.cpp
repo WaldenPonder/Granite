@@ -1,10 +1,12 @@
 #include "atmosphere.h"
 #include "render_graph.hpp"
+#include "renderer.hpp"
 
 AtmosphereParameters push;
 UBO ubo;
 
-void setup_atmosphere(Granite::RenderGraph& graph)
+void setup_atmosphere(Granite::RenderGraph &graph, Renderer& renderer, RenderQueue& queue, VisibilityList& visible,
+                      RenderContext &context, Scene& scene)
 {
 	//-------------------------------------------------------------------------------TransmittanceLut
 	auto &transmittance = graph.add_pass("TransmittanceLut", RENDER_GRAPH_QUEUE_GRAPHICS_BIT);
@@ -51,8 +53,45 @@ void setup_atmosphere(Granite::RenderGraph& graph)
 			    CommandBufferUtil::setup_fullscreen_quad(*cmd, "builtin://shaders/quad.vert",
 			                                             "builtin://shaders/atmosphere/ray_marching.frag", {});
 			    CommandBufferUtil::draw_fullscreen_quad(*cmd);
+
+			    {
+				    // Simple forward renderer, so we render opaque, transparent and background renderables in one go.
+				    visible.clear();
+				    scene.gather_visible_opaque_renderables(context.get_visibility_frustum(), visible);
+				    scene.gather_visible_transparent_renderables(context.get_visibility_frustum(), visible);
+				    scene.gather_unbounded_renderables(visible);
+
+				    // Time to render.
+				    renderer.begin(queue);
+				    queue.push_renderables(context, visible.data(), visible.size());
+				    renderer.flush(*cmd, queue, context, 0, nullptr);
+			    }
 		    });
 	}
 
+	rayMarching.set_get_clear_color(
+	    [](unsigned, VkClearColorValue *value) -> bool
+	    {
+		    if (value)
+		    {
+			    value->float32[0] = 0.0f;
+			    value->float32[1] = 0.0f;
+			    value->float32[2] = 0.0f;
+			    value->float32[3] = 0.0f;
+		    }
+
+		    return true;
+	    });
+
+	rayMarching.set_get_clear_depth_stencil(
+	    [](VkClearDepthStencilValue *value) -> bool
+	    {
+		    if (value)
+		    {
+			    value->depth = 0.0f;
+			    value->stencil = 0;
+		    }
+		    return true;
+	    });
 	graph.set_backbuffer_source("RayMarching");
 }

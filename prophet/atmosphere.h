@@ -10,6 +10,7 @@
 #include "os_filesystem.hpp"
 #include "render_context.hpp"
 #include "render_graph.hpp"
+#include "renderer.hpp"
 #include "task_composer.hpp"
 #include <fstream>
 
@@ -76,4 +77,5 @@ struct UBO
 extern AtmosphereParameters push;
 extern UBO ubo;
 
-void setup_atmosphere(Granite::RenderGraph &graph);
+void setup_atmosphere(Granite::RenderGraph &graph, Renderer &renderer, RenderQueue &queue, VisibilityList &visible,
+                      RenderContext &context, Scene &scene);

@@ -1,12 +1,17 @@
 #include "atmosphere.h"
+#include "flat_renderer.hpp"
+#include "scene_loader.hpp"
 
 struct TestRenderGraph : Granite::Application, Granite::EventHandler
 {
 	TestRenderGraph()
+	    : renderer(RendererType::GeneralForward, /* resolver */ nullptr)
 	{
 		EVENT_MANAGER_REGISTER_LATCH(TestRenderGraph, on_swapchain_changed, on_swapchain_destroyed,
 		                             SwapchainParameterEvent);
 		EVENT_MANAGER_REGISTER_LATCH(TestRenderGraph, on_device_created, on_device_destroyed, DeviceCreatedEvent);
+
+		scene_loader.load_scene("J:/Scene/plane.glb");
 	}
 
 	void on_device_created(const DeviceCreatedEvent &e);
@@ -22,6 +27,15 @@ struct TestRenderGraph : Granite::Application, Granite::EventHandler
 	RenderGraph graph;
 	ImageAssetID imageId;
 	Trackball cam;
+
+	SceneLoader scene_loader;
+	FlatRenderer flat_renderer;
+	Renderer renderer;
+	RenderQueue queue;
+	VisibilityList visible;
+
+	RenderContext context;
+	LightingParameters lighting = {};
 };
 
 void TestRenderGraph::on_device_destroyed(const DeviceCreatedEvent &e)
@@ -39,12 +53,13 @@ void TestRenderGraph::on_swapchain_destroyed(const SwapchainParameterEvent &e)
 {
 }
 
-
 void TestRenderGraph::on_swapchain_changed(const SwapchainParameterEvent &swap)
 {
 	auto &wsi = get_wsi();
 	auto &device = wsi.get_device();
 	graph.reset();
+
+	auto &scene = scene_loader.get_scene();
 
 	ResourceDimensions dim;
 	dim.width = swap.get_width();
@@ -65,14 +80,21 @@ void TestRenderGraph::on_swapchain_changed(const SwapchainParameterEvent &swap)
 	cam.look_at(vec3(0.0f, -1, .5f), vec3(0.0f, .0f, .5f), vec3(0.0f, .0f, -1.f));
 	cam.set_depth_range(.1f, 20000.0f);
 	cam.set_fovy(0.6f * half_pi<float>());
+	context.set_camera(cam);
+
+	renderer.set_mesh_renderer_options_from_lighting(lighting);
+
+	lighting.directional.color = vec3(1.0f, 0.9f, 0.8f);
+	lighting.directional.direction = normalize(vec3(1.0f, 1.0f, 1.0f));
+	context.set_lighting_parameters(&lighting);
 
 	ubo.camarePos = vec4(cam.get_position(), 1);
 	ubo.projectMat = cam.get_projection();
 	ubo.invProjMat = inverse(ubo.projectMat);
 	ubo.invViewMat = inverse(cam.get_view());
-	
-	setup_atmosphere(graph);
-		
+
+	setup_atmosphere(graph, renderer, queue, visible, context, scene);
+
 	graph.enable_timestamps(true);
 
 	graph.bake();
@@ -86,6 +108,12 @@ void TestRenderGraph::render_frame(double, double e)
 	auto &wsi = get_wsi();
 	auto &device = wsi.get_device();
 	graph.setup_attachments(device, &device.get_swapchain_view());
+
+	context.set_camera(cam);
+
+	auto &scene = scene_loader.get_scene();
+	scene.update_all_transforms();
+
 	TaskComposer composer(*GRANITE_THREAD_GROUP());
 	graph.enqueue_render_passes(device, composer);
 	composer.get_outgoing_task()->wait();
