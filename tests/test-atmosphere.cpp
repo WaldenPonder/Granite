@@ -145,13 +145,13 @@ struct UBO
 	mat4 invViewMat;
 } ubo;
 
-struct TestRenderGraph : Granite::Application, Granite::EventHandler
+struct Prophet : Granite::Application, Granite::EventHandler
 {
-	TestRenderGraph()
+	Prophet()
 	{
-		EVENT_MANAGER_REGISTER_LATCH(TestRenderGraph, on_swapchain_changed, on_swapchain_destroyed,
+		EVENT_MANAGER_REGISTER_LATCH(Prophet, on_swapchain_changed, on_swapchain_destroyed,
 		                             SwapchainParameterEvent);
-		EVENT_MANAGER_REGISTER_LATCH(TestRenderGraph, on_device_created, on_device_destroyed, DeviceCreatedEvent);
+		EVENT_MANAGER_REGISTER_LATCH(Prophet, on_device_created, on_device_destroyed, DeviceCreatedEvent);
 	}
 
 	void on_device_created(const DeviceCreatedEvent &e);
@@ -169,22 +169,22 @@ struct TestRenderGraph : Granite::Application, Granite::EventHandler
 	Trackball cam;
 };
 
-void TestRenderGraph::on_device_destroyed(const DeviceCreatedEvent &e)
+void Prophet::on_device_destroyed(const DeviceCreatedEvent &e)
 {
 	graph.reset();
 	graph.set_device(nullptr);
 }
 
-void TestRenderGraph::on_device_created(const DeviceCreatedEvent &e)
+void Prophet::on_device_created(const DeviceCreatedEvent &e)
 {
 	graph.set_device(&e.get_device());
 }
 
-void TestRenderGraph::on_swapchain_destroyed(const SwapchainParameterEvent &e)
+void Prophet::on_swapchain_destroyed(const SwapchainParameterEvent &e)
 {
 }
 
-void TestRenderGraph::on_swapchain_changed(const SwapchainParameterEvent &swap)
+void Prophet::on_swapchain_changed(const SwapchainParameterEvent &swap)
 {
 	auto &wsi = get_wsi();
 	auto &device = wsi.get_device();
@@ -205,7 +205,7 @@ void TestRenderGraph::on_swapchain_changed(const SwapchainParameterEvent &swap)
 	push.MieAbsorption = delta;
 	int sz = sizeof(push);
 
-	//为什么up要是相反的?
+	//为什么up要锟斤拷锟洁反锟斤拷?
 	cam.look_at(vec3(0.0f, -1, .5f), vec3(0.0f, .0f, .5f), vec3(0.0f, .0f, -1.f));
 	cam.set_depth_range(.1f, 20000.0f);
 	cam.set_fovy(0.6f * half_pi<float>());
@@ -272,7 +272,7 @@ void TestRenderGraph::on_swapchain_changed(const SwapchainParameterEvent &swap)
 	graph.log();
 }
 
-void TestRenderGraph::render_frame(double, double e)
+void Prophet::render_frame(double, double e)
 {
 	elapsed_time = e;
 
@@ -292,7 +292,7 @@ Application *application_create(int, char **)
 
 	try
 	{
-		auto *app = new TestRenderGraph();
+		auto *app = new Prophet();
 		return app;
 	}
 	catch (const std::exception &e)

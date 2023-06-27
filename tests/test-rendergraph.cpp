@@ -34,13 +34,13 @@
 using namespace Granite;
 using namespace Vulkan;
 
-struct TestRenderGraph : Granite::Application, Granite::EventHandler
+struct Prophet : Granite::Application, Granite::EventHandler
 {
-	TestRenderGraph()
+	Prophet()
 	{
-		EVENT_MANAGER_REGISTER_LATCH(TestRenderGraph, on_swapchain_changed, on_swapchain_destroyed,
+		EVENT_MANAGER_REGISTER_LATCH(Prophet, on_swapchain_changed, on_swapchain_destroyed,
 		                             SwapchainParameterEvent);
-		EVENT_MANAGER_REGISTER_LATCH(TestRenderGraph, on_device_created, on_device_destroyed, DeviceCreatedEvent);
+		EVENT_MANAGER_REGISTER_LATCH(Prophet, on_device_created, on_device_destroyed, DeviceCreatedEvent);
 
 		//imageId =
 		//    GRANITE_ASSET_MANAGER()->register_image_resource(*GRANITE_FILESYSTEM(), "J:\\tt2.png", ImageClass::Color);
@@ -60,22 +60,22 @@ struct TestRenderGraph : Granite::Application, Granite::EventHandler
 	ImageAssetID imageId;
 };
 
-void TestRenderGraph::on_device_destroyed(const DeviceCreatedEvent &e)
+void Prophet::on_device_destroyed(const DeviceCreatedEvent &e)
 {
 	graph.reset();
 	graph.set_device(nullptr);
 }
 
-void TestRenderGraph::on_device_created(const DeviceCreatedEvent &e)
+void Prophet::on_device_created(const DeviceCreatedEvent &e)
 {
 	graph.set_device(&e.get_device());
 }
 
-void TestRenderGraph::on_swapchain_destroyed(const SwapchainParameterEvent &e)
+void Prophet::on_swapchain_destroyed(const SwapchainParameterEvent &e)
 {
 }
 
-void TestRenderGraph::on_swapchain_changed(const SwapchainParameterEvent &swap)
+void Prophet::on_swapchain_changed(const SwapchainParameterEvent &swap)
 {
 	auto &wsi = get_wsi();
 	auto &device = wsi.get_device();
@@ -190,7 +190,7 @@ void TestRenderGraph::on_swapchain_changed(const SwapchainParameterEvent &swap)
 	graph.log();
 }
 
-void TestRenderGraph::render_frame(double, double e)
+void Prophet::render_frame(double, double e)
 {
 	elapsed_time = e;
 
@@ -210,7 +210,7 @@ Application *application_create(int, char **)
 
 	try
 	{
-		auto *app = new TestRenderGraph();
+		auto *app = new Prophet();
 		return app;
 	}
 	catch (const std::exception &e)
