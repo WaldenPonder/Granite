@@ -9,11 +9,25 @@ struct Prophet : Granite::Application, Granite::EventHandler
 	Prophet()
 	    : renderer(RendererType::GeneralForward, /* resolver */ nullptr)
 	{
-		EVENT_MANAGER_REGISTER_LATCH(Prophet, on_swapchain_changed, on_swapchain_destroyed,
-		                             SwapchainParameterEvent);
+		EVENT_MANAGER_REGISTER_LATCH(Prophet, on_swapchain_changed, on_swapchain_destroyed, SwapchainParameterEvent);
 		EVENT_MANAGER_REGISTER_LATCH(Prophet, on_device_created, on_device_destroyed, DeviceCreatedEvent);
 
 		scene_loader.load_scene("J:/Scene/plane.glb");
+	}
+
+	std::string get_name() override
+	{
+		return "Prophet";
+	}
+
+	unsigned get_default_width() override
+	{
+		return 1920;
+	}
+
+	unsigned get_default_height() override
+	{
+		return 1080;
 	}
 
 	void on_device_created(const DeviceCreatedEvent &e);
@@ -23,6 +37,7 @@ struct Prophet : Granite::Application, Granite::EventHandler
 	void on_swapchain_destroyed(const SwapchainParameterEvent &e);
 
 	void render_frame(double, double elapsed_time);
+	void post_frame();
 
 	float elapsed_time = 0.f;
 	ImageHandle render_target;
@@ -39,6 +54,17 @@ struct Prophet : Granite::Application, Granite::EventHandler
 	RenderContext context;
 	LightingParameters lighting = {};
 };
+
+void Prophet::post_frame()
+{
+	static bool f = true;
+	if (f)
+	{
+		f = false;
+		cam.full_screen_scene();
+	}
+	Application::post_frame();
+}
 
 void Prophet::on_device_destroyed(const DeviceCreatedEvent &e)
 {
@@ -82,12 +108,13 @@ void Prophet::on_swapchain_changed(const SwapchainParameterEvent &swap)
 	cam.look_at(vec3(0.0f, -1, .5f), vec3(0.0f, .0f, .5f), vec3(0.0f, .0f, -1.f));
 	cam.set_depth_range(.1f, 20000.0f);
 	cam.set_fovy(0.6f * half_pi<float>());
+	cam.set_scene(&scene_loader.get_scene());
 	context.set_camera(cam);
 
 	renderer.set_mesh_renderer_options_from_lighting(lighting);
 
 	lighting.directional.color = vec3(1.0f, 0.9f, 0.8f);
-	lighting.directional.direction = normalize(vec3(1.0f, 1.0f, 1.0f));
+	lighting.directional.direction = normalize(vec3(1.0f, 1.0f, -1.0f));
 	context.set_lighting_parameters(&lighting);
 
 	ubo.camarePos = vec4(cam.get_position(), 1);
@@ -105,14 +132,13 @@ void Prophet::on_swapchain_changed(const SwapchainParameterEvent &swap)
 
 void Prophet::render_frame(double, double e)
 {
+	context.set_camera(cam);
 	elapsed_time = e;
 
 	auto &wsi = get_wsi();
 	auto &device = wsi.get_device();
 	graph.setup_attachments(device, &device.get_swapchain_view());
-
-	context.set_camera(cam);
-
+	
 	auto &scene = scene_loader.get_scene();
 	scene.update_all_transforms();
 

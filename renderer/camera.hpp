@@ -73,7 +73,7 @@ public:
 
 	void set_rotation(const quat &rot);
 
-	void look_at(const vec3 &eye, const vec3 &at, const vec3 &up = vec3(0.0f, 1.0f, 0.0f));
+	virtual void look_at(const vec3 &eye, const vec3 &at, const vec3 &up = vec3(0.0f, 1.0f, 0.0f));
 
 	float get_znear() const
 	{

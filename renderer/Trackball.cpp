@@ -52,6 +52,13 @@ void Trackball::set_scene(Scene *scene_)
 	scene = scene_;
 }
 
+void Trackball::look_at(const vec3 &eye, const vec3 &at, const vec3 &up_)
+{
+	center = at;
+	up = up_;
+	Camera::look_at(eye, at, up);
+}
+
 void Trackball::on_swapchain(const Vulkan::SwapchainParameterEvent &state)
 {
 	set_aspect(state.get_aspect_ratio());
@@ -83,6 +90,7 @@ bool Trackball::on_input_state(const InputStateEvent &state)
 	if (state.get_key_pressed(Key::Space))
 		full_screen_scene();
 
+	shift_pressed = state.get_key_pressed(Key::LeftShift);
 	position += FACTOR * get_front() * static_cast<float>(pointer_count) * static_cast<float>(state.get_delta_time());
 
 	if (state.get_key_pressed(Key::W))
@@ -130,24 +138,17 @@ bool Trackball::on_mouse_move(const MouseMoveEvent &m)
 	vec2 new_ndc = ndc(m.get_abs_x(), m.get_abs_y(), width, height);
 	vec3 new_tbc = tbc(m.get_abs_x(), m.get_abs_y(), width, height);
 
-	if (m.get_mouse_button_pressed(MouseButton::Left))
+	if (shift_pressed && m.get_mouse_button_pressed(MouseButton::Left))
 	{
-#if 0
-		vec3 xp = cross(normalize(new_tbc), normalize(pre_tbc));
-		double xp_len = length(xp);
-		if (xp_len > 0.0)
-		{
-			float rotateAngle = asin(xp_len);
-			vec3 rotateAxis = xp / static_cast<float>(xp_len);
-			rotation = normalize(angleAxis(rotateAngle, rotateAxis) * rotation);
-		}
-#endif
-
 		auto dx = float(m.get_delta_x());
 		auto dy = float(m.get_delta_y());
 		quat pitch = angleAxis(dy * 0.005f, vec3(1.0f, 0.0f, 0.0f));
 		quat yaw = angleAxis(dx * 0.005f, vec3(0.0f, 1.0f, 0.0f));
 		rotation = normalize(pitch * rotation * yaw);
+
+		//auto up = get_up();
+		//position = rotateX(position, dx * 0.005f);
+		//position = rotateY(position, dy * 0.005f);
 	}
 	else if (m.get_mouse_button_pressed(MouseButton::Right))
 	{
