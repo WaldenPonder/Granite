@@ -105,10 +105,11 @@ void Prophet::on_swapchain_changed(const SwapchainParameterEvent &swap)
 	int sz = sizeof(push);
 
 	//为什么up要是相反的?
-	cam.look_at(vec3(0.0f, -1, .5f), vec3(0.0f, .0f, .5f), vec3(0.0f, .0f, -1.f));
+	cam.look_at(vec3(0.0f, -1, .5f), vec3(0.0f, .0f, .5f), vec3(0.0f, .0f, 1.f));
 	cam.set_depth_range(.1f, 20000.0f);
 	cam.set_fovy(0.6f * half_pi<float>());
 	cam.set_scene(&scene_loader.get_scene());
+	cam.set_factor(2, 16);
 	context.set_camera(cam);
 
 	renderer.set_mesh_renderer_options_from_lighting(lighting);
@@ -132,6 +133,8 @@ void Prophet::on_swapchain_changed(const SwapchainParameterEvent &swap)
 
 void Prophet::render_frame(double, double e)
 {
+	auto q = cam.get_rotation();
+	ubo.invViewMat = inverse(cam.get_view());
 	context.set_camera(cam);
 	elapsed_time = e;
 

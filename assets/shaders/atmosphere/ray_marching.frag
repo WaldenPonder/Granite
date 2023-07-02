@@ -394,11 +394,12 @@ void main()
     vec3 camera = camarePos.xyz;
     camera = vec3(0, -1, 0.5); //固定相机位置
     vec2 ttUV = pixPos / vec2(PARAM.screenWidth, PARAM.screenHeight);
-    vec3 ClipSpace = vec3(ttUV * vec2(2.0, -2.0) - vec2(1.0, -1.0), 1.0);
+    vec3 ClipSpace = vec3(ttUV * vec2(2.0, 2.0) - vec2(1.0, 1.0), 1.0);
 	vec4 HViewPos = invProjMat * vec4(ClipSpace, 1.0);
-    vec4 temp = invViewMat * HViewPos;
-	vec3 WorldDir = normalize(temp.xyz / temp.w);
-
+    HViewPos.xyz = HViewPos.xyz / HViewPos.w;
+    
+	vec3 WorldDir = normalize(mat3(invViewMat) * HViewPos.xyz);
+ 
      //  A few extra needed constants
 	vec3 WorldPos = camera + vec3(0.0f, 0.0f, PARAM.BottomRadius);
 	  
