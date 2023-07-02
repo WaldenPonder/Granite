@@ -391,7 +391,8 @@ void main()
 {
     vec2 pixPos = gl_FragCoord.xy;
 
-    vec3 camera = camarePos.xyz;// vec3(0, 150, 0.9);
+    vec3 camera = camarePos.xyz;
+    camera = vec3(0, -1, 0.5); //固定相机位置
     vec2 ttUV = pixPos / vec2(PARAM.screenWidth, PARAM.screenHeight);
     vec3 ClipSpace = vec3(ttUV * vec2(2.0, -2.0) - vec2(1.0, -1.0), 1.0);
 	vec4 HViewPos = invProjMat * vec4(ClipSpace, 1.0);
