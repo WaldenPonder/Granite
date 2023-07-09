@@ -1,8 +1,8 @@
 #include "Trackball.h"
-#include "transforms.hpp"
 #include "input.hpp"
-#include "scene.hpp"
 #include "muglm/matrix_helper.hpp"
+#include "scene.hpp"
+#include "transforms.hpp"
 
 float SCROLL_FACTOR = 2.0;
 float FACTOR = 8.0;
@@ -72,9 +72,7 @@ void Trackball::full_screen_scene()
 		return;
 
 	AABB aabb(vec3(FLT_MAX), vec3(-FLT_MAX));
-	auto &objects = scene
-	                ->get_entity_pool()
-	                .get_component_group<RenderInfoComponent, RenderableComponent>();
+	auto &objects = scene->get_entity_pool().get_component_group<RenderInfoComponent, RenderableComponent>();
 	for (auto &caster : objects)
 		aabb.expand(get_component<RenderInfoComponent>(caster)->world_aabb);
 
@@ -94,7 +92,7 @@ bool Trackball::on_input_state(const InputStateEvent &state)
 	position += FACTOR * get_front() * static_cast<float>(pointer_count) * static_cast<float>(state.get_delta_time());
 
 	if (state.get_key_pressed(Key::W))
-		position += FACTOR  * get_front() * static_cast<float>(state.get_delta_time());
+		position += FACTOR * get_front() * static_cast<float>(state.get_delta_time());
 	else if (state.get_key_pressed(Key::S))
 		position -= FACTOR * get_front() * static_cast<float>(state.get_delta_time());
 	if (state.get_key_pressed(Key::D))
@@ -103,20 +101,36 @@ bool Trackball::on_input_state(const InputStateEvent &state)
 		position -= FACTOR * get_right() * static_cast<float>(state.get_delta_time());
 
 	float dx = 0.0f;
-	float dy = 0.0f;
-	if (state.get_key_pressed(Key::Left))
-		dx -= 1.20f * state.get_delta_time();
-	if (state.get_key_pressed(Key::Right))
-		dx += 1.20f * state.get_delta_time();
 
 	if (state.get_key_pressed(Key::Up))
-		dy -= 1.20f * state.get_delta_time();
+		dx -= 10 * state.get_delta_time();
 	if (state.get_key_pressed(Key::Down))
-		dy += 1.20f * state.get_delta_time();
+		dx += 10 * state.get_delta_time();
 
-	quat pitch = angleAxis(dy, vec3(1.0f, 0.0f, .0f));
-	quat yaw = angleAxis(dx, vec3(.0f, 0.0f, 1.0f));
-	rotation = normalize(pitch * rotation * yaw);
+	if (abs(dx) > FLT_EPSILON)
+	{
+		position += vec3(0, 0, dx);
+		rotation = Granite::look_at(-position, up);
+	}
+	//quat pitch = angleAxis(dx, vec3(1.0f, 0.0f, .0f));
+	//quat yaw = angleAxis(dz, vec3(.0f, 0.0f, 1.0f));
+
+	auto up = get_up();
+
+	float dz = 0.0f;
+	if (state.get_key_pressed(Key::Left))
+		dz -= 1.20f * state.get_delta_time();
+	if (state.get_key_pressed(Key::Right))
+		dz += 1.20f * state.get_delta_time();
+
+	if (abs(dz) > FLT_EPSILON)
+	{
+		up = vec3(0, 0, 1);
+		position = angleAxis(dz, up) * position;
+		rotation = Granite::look_at(-position, up);
+	}
+
+	//rotation = normalize(pitch * rotation * yaw);
 
 	return true;
 }
@@ -173,4 +187,4 @@ bool Trackball::on_scroll(const ScrollEvent &e)
 	position += get_front() * f;
 	return true;
 }
-}
+} // namespace Granite
