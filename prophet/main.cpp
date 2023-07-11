@@ -114,7 +114,7 @@ void Prophet::on_swapchain_changed(const SwapchainParameterEvent &swap)
 	renderer.set_mesh_renderer_options_from_lighting(lighting);
 
 	lighting.directional.color = vec3(1.0f, 0.9f, 0.8f);
-	lighting.directional.direction = normalize(vec3(1.0f, 1.0f, -1.0f));
+	lighting.directional.direction = normalize(vec3(1.0f, 1.0f, 1.0f));
 	context.set_lighting_parameters(&lighting);
 
 	ubo.camarePos = vec4(cam.get_position(), 1);
