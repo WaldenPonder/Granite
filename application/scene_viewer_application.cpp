@@ -361,7 +361,7 @@ SceneViewerApplication::SceneViewerApplication(const std::string &path, const st
 	else
 		lighting.fog = {};
 
-	cam.look_at(vec3(0.0f, 0.0f, 8.0f), vec3(0.0f));
+	cam.look_at(vec3(0.0f, 0.0f, 8.0f), vec3(0.0f), vec3(0, 0, 1));
 
 	// Pick a camera to show.
 	selected_camera = &cam;

@@ -76,8 +76,9 @@ struct UBO
 
 extern AtmosphereParameters push;
 extern UBO ubo;
-
+extern RendererSuite renderer_suite;
+extern RenderTextureResource *shadows;
 void setup_atmosphere(Granite::RenderGraph &graph, Renderer &renderer, RenderQueue &queue, VisibilityList &visible,
-                      RenderContext &context, Scene &scene);
+                      RenderContext &context, Scene &scene, RenderContext& depth_context);
 
 using namespace Granite;
