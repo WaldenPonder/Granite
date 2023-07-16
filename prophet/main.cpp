@@ -137,8 +137,6 @@ void Prophet::on_swapchain_changed(const SwapchainParameterEvent &swap)
 	cam.set_factor(2, 16);
 	context.set_camera(cam);
 
-	renderer.set_mesh_renderer_options_from_lighting(lighting);
-
 	lighting.directional.color = vec3(1.0f, 0.9f, 0.8f);
 	lighting.directional.direction = normalize(vec3(1.0f, 1.0f, 1.0f));
 	context.set_lighting_parameters(&lighting);
@@ -168,6 +166,8 @@ void Prophet::render_frame(double frame_time, double e)
 	frame.elapsed_time = elapsed_time;
 	frame.frame_time = frame_time;
 	context.set_frame_parameters(frame);
+
+	renderer.set_mesh_renderer_options_from_lighting(lighting);
 
 	setup_shadow_map();
 	auto &wsi = get_wsi();
