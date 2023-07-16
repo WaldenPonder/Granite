@@ -1,5 +1,7 @@
-#pragma once
-
+#include "flat_renderer.hpp"
+#include "path.hpp"
+#include "scene_loader.hpp"
+#include "ui_manager.hpp"
 #include "muglm/matrix_helper.hpp"
 #include "muglm/muglm_impl.hpp"
 #include "Trackball.h"
@@ -14,6 +16,7 @@
 #include "task_composer.hpp"
 #include <fstream>
 
+using namespace muglm;
 using namespace Granite;
 using namespace Vulkan;
 
@@ -31,7 +34,7 @@ struct AtmosphereParameters
 	float AbsorptionDensity0LayerWidth = 25.f;
 
 	// Rayleigh scattering coefficients
-	vec3 RayleighScattering = vec3(0.005802f, 0.013558f, 0.033100f);
+	muglm::vec3 RayleighScattering = vec3(0.005802f, 0.013558f, 0.033100f);
 
 	// Mie scattering exponential distribution scale in the atmosphere
 	float MieDensityExpScale = -1.f / 1.2f;
@@ -74,11 +77,59 @@ struct UBO
 	mat4 invViewMat;
 };
 
-extern AtmosphereParameters push;
-extern UBO ubo;
-extern RendererSuite renderer_suite;
-extern RenderTextureResource *shadows;
-void setup_atmosphere(Granite::RenderGraph &graph, Renderer &renderer, RenderQueue &queue, VisibilityList &visible,
-                      RenderContext &context, Scene &scene, RenderContext& depth_context);
+class Prophet : public Application, public EventHandler
+{
+public:
+	Prophet();
+		
+	std::string get_name() override
+	{
+		return "Prophet";
+	}
 
-using namespace Granite;
+	unsigned get_default_width() override
+	{
+		return 1920;
+	}
+
+	unsigned get_default_height() override
+	{
+		return 1080;
+	}
+
+	void on_device_created(const DeviceCreatedEvent &e);
+	void on_device_destroyed(const DeviceCreatedEvent &e);
+
+	void on_swapchain_changed(const SwapchainParameterEvent &e);
+	void on_swapchain_destroyed(const SwapchainParameterEvent &e);
+
+	void setup_shadow_map();
+	void render_frame(double, double elapsed_time);
+	void post_frame();
+
+	void add_shadow_pass();
+	void setup_atmosphere();
+
+private:
+	float elapsed_time = 0.f;
+	ImageHandle render_target;
+	RenderGraph graph;
+	ImageAssetID imageId;
+	Trackball cam;
+
+	SceneLoader scene_loader;
+	FlatRenderer flat_renderer;
+	Renderer renderer;
+	RenderQueue queue;
+	VisibilityList visible;
+
+	RenderContext depth_context;
+	RenderContext context;
+	LightingParameters lighting = {};
+	RendererSuite::Config renderer_suite_config;
+
+	AtmosphereParameters push;
+	UBO ubo;
+	RendererSuite renderer_suite;
+	RenderTextureResource *shadows = nullptr;
+};

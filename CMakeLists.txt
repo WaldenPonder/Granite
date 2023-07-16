@@ -370,7 +370,7 @@ if (GRANITE_TOOLS)
     add_subdirectory(renderer/fft/test)
 endif()
 
-add_granite_application(prophet prophet/main.cpp)
+add_granite_application(prophet prophet/main.cpp  prophet/prophet.cpp  prophet/prophet.h)
 if (NOT ANDROID)
     target_compile_definitions(prophet PRIVATE ASSET_DIRECTORY=\"${CMAKE_CURRENT_SOURCE_DIR}/assets\")
 endif()
