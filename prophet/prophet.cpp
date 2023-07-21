@@ -3,6 +3,7 @@
 
 #include "Trackball.h"
 #include "application.hpp"
+#include "click_button.hpp"
 #include "command_buffer.hpp"
 #include "device.hpp"
 #include "muglm/matrix_helper.hpp"
@@ -15,6 +16,8 @@
 #include "renderer.hpp"
 #include "scene_renderer.hpp"
 #include "task_composer.hpp"
+#include "window.hpp"
+
 #include <fstream>
 
 static std::string tagcat(const std::string &a, const std::string &b)
@@ -28,9 +31,11 @@ Prophet::Prophet()
 	EVENT_MANAGER_REGISTER_LATCH(Prophet, on_swapchain_changed, on_swapchain_destroyed, SwapchainParameterEvent);
 	EVENT_MANAGER_REGISTER_LATCH(Prophet, on_device_created, on_device_destroyed, DeviceCreatedEvent);
 
-	scene_loader.load_scene("J:/Scene/plane.glb");
+	scene_loader.load_scene("J:/Scene/stylized_tree.glb");
 
 	renderer_suite_config.directional_light_vsm = true;
+
+	createUi();
 }
 
 void Prophet::setup_shadow_map()
@@ -217,6 +222,8 @@ void Prophet::setup_atmosphere()
 			    renderer.begin(queue);
 			    queue.push_renderables(context, visible.data(), visible.size());
 			    renderer.flush(*cmd, queue, context, 0, nullptr);
+
+			    GRANITE_UI_MANAGER()->render(*cmd);
 		    });
 	}
 
@@ -247,6 +254,53 @@ void Prophet::setup_atmosphere()
 	//graph.set_backbuffer_source("shadow-main");
 	graph.set_backbuffer_source("RayMarching");
 }
+
+
+void Prophet::createUi()
+{
+	auto &ui = *GRANITE_UI_MANAGER();
+	ui.reset_children();
+
+	{
+		auto button = Util::make_handle<UI::ClickButton>();
+		button->on_click(
+		    []()
+		    {
+			    OPENFILENAME ofn;
+			    char szFileName[MAX_PATH] = "";
+
+			    ZeroMemory(&ofn, sizeof(ofn));
+
+			    ofn.lStructSize = sizeof(ofn);
+			    ofn.hwndOwner = nullptr;
+			    ofn.lpstrFilter = "All Files (*.*)\0*.*\0";
+			    ofn.lpstrFile = szFileName;
+			    ofn.nMaxFile = sizeof(szFileName);
+			    ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
+
+			    if (GetOpenFileName(&ofn) == TRUE)
+			    {
+				    LOGI("file load %s\n", szFileName);
+			    }
+		    });
+		ui.add_child(button);
+		button->set_floating(true);
+		button->set_text("Import");
+		button->set_font_size(UI::FontSize::Large);
+		button->set_floating_position(vec2(10.0f, 20.f));
+	}
+
+	{
+		auto button = Util::make_handle<UI::ClickButton>();
+		button->on_click([]() { LOGI("button clicked2\n"); });
+		ui.add_child(button);
+		button->set_floating(true);
+		button->set_text("Test");
+		button->set_font_size(UI::FontSize::Large);
+		button->set_floating_position(vec2(10.0f, 70.f));
+	}
+}
+
 
 void Prophet::on_device_destroyed(const DeviceCreatedEvent &e)
 {
@@ -342,4 +396,14 @@ void Prophet::render_frame(double frame_time, double e)
 	TaskComposer composer(*GRANITE_THREAD_GROUP());
 	graph.enqueue_render_passes(device, composer);
 	composer.get_outgoing_task()->wait();
+
+	//if (0)
+	{
+		//auto cmd = device.request_command_buffer();
+		//auto rp = device.get_swapchain_render_pass(SwapchainRenderPass::Depth);
+		//cmd->begin_render_pass(rp);
+		//GRANITE_UI_MANAGER()->render(*cmd);
+		//cmd->end_render_pass();
+		//device.submit(cmd);
+	}
 }

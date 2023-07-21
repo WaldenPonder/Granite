@@ -80,6 +80,7 @@ struct UBO
 class Prophet : public Application, public EventHandler
 {
 public:
+	
 	Prophet();
 		
 	std::string get_name() override
@@ -109,6 +110,8 @@ public:
 
 	void add_shadow_pass();
 	void setup_atmosphere();
+
+	void createUi();
 
 private:
 	float elapsed_time = 0.f;
