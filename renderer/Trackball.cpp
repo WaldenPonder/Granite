@@ -91,14 +91,17 @@ bool Trackball::on_input_state(const InputStateEvent &state)
 	shift_pressed = state.get_key_pressed(Key::LeftShift);
 	position += FACTOR * get_front() * static_cast<float>(pointer_count) * static_cast<float>(state.get_delta_time());
 
+	float accelerate = 1.f;
+	if (shift_pressed)
+		accelerate = 2.f;
 	if (state.get_key_pressed(Key::W))
-		position += FACTOR * get_front() * static_cast<float>(state.get_delta_time());
+		position += accelerate * FACTOR * get_front() * static_cast<float>(state.get_delta_time());
 	else if (state.get_key_pressed(Key::S))
-		position -= FACTOR * get_front() * static_cast<float>(state.get_delta_time());
+		position -= accelerate * FACTOR * get_front() * static_cast<float>(state.get_delta_time());
 	if (state.get_key_pressed(Key::D))
-		position += FACTOR * get_right() * static_cast<float>(state.get_delta_time());
+		position += accelerate * FACTOR * get_right() * static_cast<float>(state.get_delta_time());
 	else if (state.get_key_pressed(Key::A))
-		position -= FACTOR * get_right() * static_cast<float>(state.get_delta_time());
+		position -= accelerate * FACTOR * get_right() * static_cast<float>(state.get_delta_time());
 
 	float dx = 0.0f;
 
@@ -112,8 +115,6 @@ bool Trackball::on_input_state(const InputStateEvent &state)
 		position += vec3(0, 0, dx);
 		rotation = Granite::look_at(-position, up);
 	}
-	//quat pitch = angleAxis(dx, vec3(1.0f, 0.0f, .0f));
-	//quat yaw = angleAxis(dz, vec3(.0f, 0.0f, 1.0f));
 
 	auto up = get_up();
 
@@ -137,46 +138,16 @@ bool Trackball::on_input_state(const InputStateEvent &state)
 
 bool Trackball::on_mouse_move(const MouseMoveEvent &m)
 {
-	auto dx = static_cast<float>(m.get_delta_x());
-	auto dy = static_cast<float>(m.get_delta_y());
-
-	if (preX == DBL_MAX && preY == DBL_MAX)
-	{
-		preX = m.get_abs_x();
-		preY = m.get_abs_y();
-	}
-
-	vec2 prev_ndc = ndc(preX, preY, width, height);
-	vec3 pre_tbc = tbc(preX, preY, width, height);
-
-	vec2 new_ndc = ndc(m.get_abs_x(), m.get_abs_y(), width, height);
-	vec3 new_tbc = tbc(m.get_abs_x(), m.get_abs_y(), width, height);
-
 	if (shift_pressed && m.get_mouse_button_pressed(MouseButton::Left))
 	{
-		auto dx = float(m.get_delta_x());
-		auto dy = float(m.get_delta_y());
-		quat pitch = angleAxis(dy * 0.005f, vec3(1.0f, 0.0f, 0.0f));
-		quat yaw = angleAxis(dx * 0.005f, vec3(0.0f, 1.0f, 0.0f));
-		rotation = normalize(pitch * rotation * yaw);
+		auto dx = float(m.get_delta_x()) * 0.002f;
+		auto dy = float(m.get_delta_y()) * 0.002f;
 
-		//auto up = get_up();
-		//position = rotateX(position, dx * 0.005f);
-		//position = rotateY(position, dy * 0.005f);
+		auto right = get_right();
+		position = angleAxis(-dx, up) * position;
+		position = angleAxis(-dy, right) * position;
+		rotation = Granite::look_at(-position, up);
 	}
-	else if (m.get_mouse_button_pressed(MouseButton::Right))
-	{
-		vec2 delta = new_ndc - prev_ndc;
-
-		vec3 sideNormal = cross(get_front(), get_up());
-
-		float distance = 1000.0;
-		vec3 translation = sideNormal * (-delta.x * distance) + get_up() * (delta.y * distance);
-		position += translation;
-	}
-
-	preX = m.get_abs_x();
-	preY = m.get_abs_y();
 
 	return true;
 }
