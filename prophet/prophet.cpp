@@ -31,7 +31,7 @@ Prophet::Prophet()
 	EVENT_MANAGER_REGISTER_LATCH(Prophet, on_swapchain_changed, on_swapchain_destroyed, SwapchainParameterEvent);
 	EVENT_MANAGER_REGISTER_LATCH(Prophet, on_device_created, on_device_destroyed, DeviceCreatedEvent);
 
-	scene_loader.load_scene("J:/Scene/stylized_tree.glb");
+	scene_loader.load_scene("J:/Scene/plane.glb");
 
 	renderer_suite_config.directional_light_vsm = true;
 
@@ -264,7 +264,7 @@ void Prophet::createUi()
 	{
 		auto button = Util::make_handle<UI::ClickButton>();
 		button->on_click(
-		    []()
+		    [&]()
 		    {
 			    OPENFILENAME ofn;
 			    char szFileName[MAX_PATH] = "";
@@ -273,13 +273,15 @@ void Prophet::createUi()
 
 			    ofn.lStructSize = sizeof(ofn);
 			    ofn.hwndOwner = nullptr;
-			    ofn.lpstrFilter = "All Files (*.*)\0*.*\0";
+			    ofn.lpstrFilter = "GLB Files (*.glb)\0*.glb\0GLTF Files (*.gltf)\0*.gltf\0All Files (*.*)\0*.*\0";
 			    ofn.lpstrFile = szFileName;
 			    ofn.nMaxFile = sizeof(szFileName);
 			    ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
 
 			    if (GetOpenFileName(&ofn) == TRUE)
 			    {
+				    auto load_model = scene_loader.load_scene_to_root_node(szFileName);
+				    scene_loader.get_scene().get_root_node()->add_child(load_model);
 				    LOGI("file load %s\n", szFileName);
 			    }
 		    });
@@ -396,14 +398,4 @@ void Prophet::render_frame(double frame_time, double e)
 	TaskComposer composer(*GRANITE_THREAD_GROUP());
 	graph.enqueue_render_passes(device, composer);
 	composer.get_outgoing_task()->wait();
-
-	//if (0)
-	{
-		//auto cmd = device.request_command_buffer();
-		//auto rp = device.get_swapchain_render_pass(SwapchainRenderPass::Depth);
-		//cmd->begin_render_pass(rp);
-		//GRANITE_UI_MANAGER()->render(*cmd);
-		//cmd->end_render_pass();
-		//device.submit(cmd);
-	}
 }
