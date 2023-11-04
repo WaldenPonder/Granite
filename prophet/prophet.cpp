@@ -31,7 +31,7 @@ Prophet::Prophet()
 	EVENT_MANAGER_REGISTER_LATCH(Prophet, on_swapchain_changed, on_swapchain_destroyed, SwapchainParameterEvent);
 	EVENT_MANAGER_REGISTER_LATCH(Prophet, on_device_created, on_device_destroyed, DeviceCreatedEvent);
 
-	scene_loader.load_scene("J:/Scene/plane.glb");
+	scene_loader.load_scene("J:/Scene/prophet.glb");
 
 	renderer_suite_config.directional_light_vsm = true;
 

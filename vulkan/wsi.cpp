@@ -1411,7 +1411,8 @@ WSI::SwapchainError WSI::init_swapchain(unsigned width, unsigned height)
 
 	platform->event_swapchain_destroyed();
 	auto res = table->vkCreateSwapchainKHR(context->get_device(), &info, nullptr, &swapchain);
-	table->vkDestroySwapchainKHR(context->get_device(), old_swapchain, nullptr);
+	if (old_swapchain)
+		table->vkDestroySwapchainKHR(context->get_device(), old_swapchain, nullptr);
 	has_acquired_swapchain_index = false;
 	present_id = 0;
 	present_last_id = 0;
