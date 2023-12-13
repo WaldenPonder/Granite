@@ -154,7 +154,6 @@ void Prophet::add_shadow_pass()
 
 void Prophet::setup_atmosphere()
 {
-	add_shadow_pass();
 	auto &scene = scene_loader.get_scene();
 
 	//-------------------------------------------------------------------------------TransmittanceLut
@@ -251,8 +250,25 @@ void Prophet::setup_atmosphere()
 		    }
 		    return true;
 	    });
-	//graph.set_backbuffer_source("shadow-main");
-	graph.set_backbuffer_source("RayMarching");
+
+
+		//-------------------------------------------------------------------------------TransmittanceLut
+	auto &tt = graph.add_pass("Final", RENDER_GRAPH_QUEUE_GRAPHICS_BIT);
+	{
+		AttachmentInfo back;
+		back.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+		tt.add_color_output("Final", back);
+		tt.add_texture_input("RayMarching");
+		tt.set_build_render_pass(
+		    [&](CommandBuffer &cmd_buffer)
+		    {
+			    auto *cmd = &cmd_buffer;
+			    CommandBufferUtil::setup_fullscreen_quad(*cmd, "builtin://shaders/quad.vert",
+			                                             "builtin://shaders/test.frag", {});
+			    CommandBufferUtil::draw_fullscreen_quad(*cmd);
+		    });
+	}
+	graph.set_backbuffer_source("Final");
 }
 
 
@@ -360,6 +376,7 @@ void Prophet::on_swapchain_changed(const SwapchainParameterEvent &swap)
 	ubo.invProjMat = inverse(ubo.projectMat);
 	ubo.invViewMat = inverse(cam.get_view());
 
+	add_shadow_pass();
 	setup_atmosphere();
 
 	graph.enable_timestamps(true);
