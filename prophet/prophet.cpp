@@ -154,6 +154,8 @@ void Prophet::add_shadow_pass()
 
 void Prophet::setup_atmosphere()
 {
+	inv_resolution.inv_reso = vec2(1.0 / get_default_width(), 1.0 / get_default_height());
+
 	auto &scene = scene_loader.get_scene();
 
 	//-------------------------------------------------------------------------------TransmittanceLut
@@ -198,10 +200,6 @@ void Prophet::setup_atmosphere()
 			    auto *cmd = &cmd_buffer;
 			    auto &input = graph.get_physical_texture_resource(transmittance_lut);
 			    cmd->set_texture(0, 0, input, StockSampler::LinearClamp);
-
-			    //BINDING_GLOBAL_DIRECTIONAL_SHADOW
-			    /*		    auto &s = graph.get_physical_texture_resource(*shadows);
-				cmd->set_texture(0, 5, s, StockSampler::LinearClamp);*/
 
 			    auto *global = static_cast<UBO *>(cmd->allocate_constant_data(0, 1, sizeof(UBO)));
 			    *global = ubo;
@@ -263,6 +261,13 @@ void Prophet::setup_atmosphere()
 		    [&](CommandBuffer &cmd_buffer)
 		    {
 			    auto *cmd = &cmd_buffer;
+			    auto &resource = rayMarching.add_texture_input("RayMarching");
+			    auto &input = graph.get_physical_texture_resource(resource);
+			    cmd->set_texture(0, 0, input, StockSampler::LinearClamp);
+
+				auto *global = static_cast<InvResolution *>(cmd->allocate_constant_data(0, 1, sizeof(InvResolution)));
+			    *global = inv_resolution;
+
 			    CommandBufferUtil::setup_fullscreen_quad(*cmd, "builtin://shaders/quad.vert",
 			                                             "builtin://shaders/test.frag", {});
 			    CommandBufferUtil::draw_fullscreen_quad(*cmd);

@@ -77,6 +77,11 @@ struct UBO
 	mat4 invViewMat;
 };
 
+struct InvResolution
+{
+	vec2 inv_reso;
+};
+
 class Prophet : public Application, public EventHandler
 {
 public:
@@ -135,4 +140,6 @@ private:
 	UBO ubo;
 	RendererSuite renderer_suite;
 	RenderTextureResource *shadows = nullptr;
+
+	InvResolution inv_resolution;
 };
