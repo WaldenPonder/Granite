@@ -269,7 +269,7 @@ void Prophet::setup_atmosphere()
 			    *global = inv_resolution;
 
 			    CommandBufferUtil::setup_fullscreen_quad(*cmd, "builtin://shaders/quad.vert",
-			                                             "builtin://shaders/test.frag", {});
+			                                             "builtin://shaders/fxaa-test.frag", {});
 			    CommandBufferUtil::draw_fullscreen_quad(*cmd);
 		    });
 	}

@@ -11,7 +11,7 @@ const float FXAA_REDUCE_MIN = 1.0 / 128.0;
 const float FXAA_REDUCE_MUL = 1.0 / 8.0;
 const float FXAA_SPAN_MAX = 8.0;
 
-layout(push_constant, std430) uniform Registers
+layout(std140, set = 0, binding = 1) uniform Registers
 {
     vec2 inv_resolution;
 } registers;
@@ -41,7 +41,8 @@ void main()
     mediump vec2 dir;
     dir.x = -((lumaNW + lumaNE) - (lumaSW + lumaSE));
     dir.y =  ((lumaNW + lumaSW) - (lumaNE + lumaSE));
-
+    
+    //vec2 ddir = dir;
     mediump float dirReduce = max((lumaNW + lumaNE + lumaSW + lumaSE) *
                                   (0.25 * FXAA_REDUCE_MUL), FXAA_REDUCE_MIN);
 
@@ -58,9 +59,9 @@ void main()
     mediump float lumaB = dot(rgbB, luma);
     mediump vec3 color;
     if ((lumaB < lumaMin) || (lumaB > lumaMax))
-        color = vec3(1,0,0);
+        color = rgbA;
     else
         color = rgbB;
-
+        
     FragColor.rgb = color;
 }
