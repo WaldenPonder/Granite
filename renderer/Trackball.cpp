@@ -103,12 +103,27 @@ bool Trackball::on_input_state(const InputStateEvent &state)
 	else if (state.get_key_pressed(Key::A))
 		position -= accelerate * FACTOR * get_right() * static_cast<float>(state.get_delta_time());
 
+	position.z = max(5.0f, position.z);
+
 	float dx = 0.0f;
 
-	if (state.get_key_pressed(Key::Up))
-		dx -= 10 * state.get_delta_time();
-	if (state.get_key_pressed(Key::Down))
-		dx += 10 * state.get_delta_time();
+	if (shift_pressed)
+	{
+		double delta = 0;
+		if (state.get_key_pressed(Key::Up))
+			delta -= 10. * state.get_delta_time();
+		if (state.get_key_pressed(Key::Down))
+			delta += 10. * state.get_delta_time();
+		position.z += delta;
+		center.z += delta;
+	}
+	else
+	{
+		if (state.get_key_pressed(Key::Up))
+			dx -= 10 * state.get_delta_time();
+		if (state.get_key_pressed(Key::Down))
+			dx += 10 * state.get_delta_time();
+	}
 
 	if (abs(dx) > FLT_EPSILON)
 	{

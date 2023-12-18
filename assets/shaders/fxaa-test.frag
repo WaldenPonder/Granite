@@ -42,7 +42,7 @@ void main()
     dir.x = -((lumaNW + lumaNE) - (lumaSW + lumaSE));
     dir.y =  ((lumaNW + lumaSW) - (lumaNE + lumaSE));
     
-    //vec2 ddir = dir;
+    vec2 ddir = dir;
     mediump float dirReduce = max((lumaNW + lumaNE + lumaSW + lumaSE) *
                                   (0.25 * FXAA_REDUCE_MUL), FXAA_REDUCE_MIN);
 
