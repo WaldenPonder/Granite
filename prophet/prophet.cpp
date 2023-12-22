@@ -251,13 +251,13 @@ void Prophet::setup_atmosphere()
 
 
 		//-------------------------------------------------------------------------------TransmittanceLut
-	auto &tt = graph.add_pass("Final", RENDER_GRAPH_QUEUE_GRAPHICS_BIT);
+	auto &fxaa = graph.add_pass("Final", RENDER_GRAPH_QUEUE_GRAPHICS_BIT);
 	{
 		AttachmentInfo back;
 		back.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-		tt.add_color_output("Final", back);
-		tt.add_texture_input("RayMarching");
-		tt.set_build_render_pass(
+		fxaa.add_color_output("Final", back);
+		fxaa.add_texture_input("RayMarching");
+		fxaa.set_build_render_pass(
 		    [&](CommandBuffer &cmd_buffer)
 		    {
 			    auto *cmd = &cmd_buffer;
