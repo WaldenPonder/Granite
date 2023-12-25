@@ -79,6 +79,9 @@ Application *application_create(int argc, char **argv)
 
 	try
 	{
+		path = "J:\\Scene\\ImportedModel\\building_08.glb";
+		quirks = "F:\\Prophet\\viewer\\quirks.json";
+		config = "F:\\Prophet\\viewer\\viewer_config.json";
 		auto *app = new SceneViewerApplication(path, config, quirks, cli_config);
 		app->loop_animations();
 		return app;

@@ -17,7 +17,7 @@
 	"renderTargetFp16": false,
 	"rescaleScene": false,
 	"deferredClusteredStencilCulling": true,
-	"postAA": "none",
+	"postAA": "taaHigh",
 	"showUi": true,
 	"volumetricFog": false,
 	"volumetricDiffuse": false,

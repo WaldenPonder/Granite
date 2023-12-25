@@ -27,6 +27,7 @@ static std::string tagcat(const std::string &a, const std::string &b)
 
 Prophet::Prophet()
     : renderer(RendererType::GeneralForward, /* resolver */ nullptr)
+    , renderer_mv(RendererType::MotionVector, /* resolver */ nullptr)
 {
 	EVENT_MANAGER_REGISTER_LATCH(Prophet, on_swapchain_changed, on_swapchain_destroyed, SwapchainParameterEvent);
 	EVENT_MANAGER_REGISTER_LATCH(Prophet, on_device_created, on_device_destroyed, DeviceCreatedEvent);
@@ -222,50 +223,117 @@ void Prophet::setup_atmosphere()
 
 			    GRANITE_UI_MANAGER()->render(*cmd);
 		    });
+
+		rayMarching.set_get_clear_color(
+		    [](unsigned, VkClearColorValue *value) -> bool
+		    {
+			    if (value)
+			    {
+				    value->float32[0] = 0.0f;
+				    value->float32[1] = 0.0f;
+				    value->float32[2] = 0.0f;
+				    value->float32[3] = 0.0f;
+			    }
+
+			    return true;
+		    });
+
+		rayMarching.set_get_clear_depth_stencil(
+		    [](VkClearDepthStencilValue *value) -> bool
+		    {
+			    if (value)
+			    {
+				    value->depth = 1.0f;
+				    value->stencil = 0;
+			    }
+			    return true;
+		    });
 	}
 
-	rayMarching.set_get_clear_color(
-	    [](unsigned, VkClearColorValue *value) -> bool
-	    {
-		    if (value)
+	//-------------------------------------------------------------------------------mv
+	auto &mv_pass = graph.add_pass("mv-main", RENDER_GRAPH_QUEUE_GRAPHICS_BIT);
+	{
+		bool full_mv = false;
+		AttachmentInfo mv;
+		mv.format = VK_FORMAT_R16G16_SFLOAT;
+
+		mv_pass.set_depth_stencil_input("depth-main");
+		mv_pass.add_color_output("mv-main", mv);
+
+		if (full_mv)
+			mv_pass.add_attachment_input("depth-main");
+
+		mv_pass.set_build_render_pass(
+		    [&](CommandBuffer &cmd_buffer)
 		    {
-			    value->float32[0] = 0.0f;
-			    value->float32[1] = 0.0f;
-			    value->float32[2] = 0.0f;
-			    value->float32[3] = 0.0f;
-		    }
+			    auto *cmd = &cmd_buffer;
+			    // Simple forward renderer, so we render opaque, transparent and background renderables in one go.
+			    visible.clear();
+			    scene.gather_visible_opaque_renderables(context.get_visibility_frustum(), visible);
+			    //scene.gather_visible_motion_vector_renderables(context.get_visibility_frustum(), visible);
 
-		    return true;
-	    });
+				TaskComposer composer(*GRANITE_THREAD_GROUP());
+		    	jitter.step(cam.get_projection(), cam.get_view());
+			    context.set_camera(jitter.get_jittered_projection(), cam.get_view());
+			    context.set_motion_vector_projections(jitter);
+			    scene.refresh_per_frame(context, composer);
 
-	rayMarching.set_get_clear_depth_stencil(
-	    [](VkClearDepthStencilValue *value) -> bool
-	    {
-		    if (value)
+			    // Time to render.
+			    renderer_mv.begin(queue);
+			    queue.push_motion_vector_renderables(context, visible.data(), visible.size());
+			    renderer_mv.flush(*cmd, queue, context, 0, nullptr);
+
+			    GRANITE_UI_MANAGER()->render(*cmd);
+		    });
+
+		mv_pass.set_get_clear_color(
+		    [](unsigned, VkClearColorValue *value) -> bool
 		    {
-			    value->depth = 1.0f;
-			    value->stencil = 0;
-		    }
-		    return true;
-	    });
+			    if (value)
+			    {
+				    value->float32[0] = 0.0f;
+				    value->float32[1] = 0.0f;
+				    value->float32[2] = 0.0f;
+				    value->float32[3] = 0.0f;
+			    }
 
+			    return true;
+		    });
 
-		//-------------------------------------------------------------------------------TransmittanceLut
+		mv_pass.set_get_clear_depth_stencil(
+		    [](VkClearDepthStencilValue *value) -> bool
+		    {
+			    if (value)
+			    {
+				    value->depth = 1.0f;
+				    value->stencil = 0;
+			    }
+			    return true;
+		    });
+	}
+
+	//-------------------------------------------------------------------------------fxaa
 	auto &fxaa = graph.add_pass("Final", RENDER_GRAPH_QUEUE_GRAPHICS_BIT);
 	{
 		AttachmentInfo back;
 		back.format = VK_FORMAT_R32G32B32A32_SFLOAT;
 		fxaa.add_color_output("Final", back);
 		fxaa.add_texture_input("RayMarching");
+		fxaa.add_texture_input("mv-main");
+
 		fxaa.set_build_render_pass(
 		    [&](CommandBuffer &cmd_buffer)
 		    {
 			    auto *cmd = &cmd_buffer;
-			    auto &resource = rayMarching.add_texture_input("RayMarching");
+			    auto &resource = fxaa.add_texture_input("RayMarching");
 			    auto &input = graph.get_physical_texture_resource(resource);
 			    cmd->set_texture(0, 0, input, StockSampler::LinearClamp);
 
-				auto *global = static_cast<InvResolution *>(cmd->allocate_constant_data(0, 1, sizeof(InvResolution)));
+			    auto &resourceMv = fxaa.add_texture_input("mv-main");
+			    auto &inputMv = graph.get_physical_texture_resource(resourceMv);
+			    cmd->set_texture(0, 1, inputMv, StockSampler::LinearClamp);
+
+			    auto *global = static_cast<InvResolution *>(cmd->allocate_constant_data(0, 2, sizeof(InvResolution)));
 			    *global = inv_resolution;
 
 			    CommandBufferUtil::setup_fullscreen_quad(*cmd, "builtin://shaders/quad.vert",
@@ -275,7 +343,6 @@ void Prophet::setup_atmosphere()
 	}
 	graph.set_backbuffer_source("Final");
 }
-
 
 void Prophet::createUi()
 {
@@ -323,7 +390,6 @@ void Prophet::createUi()
 		button->set_floating_position(vec2(10.0f, 70.f));
 	}
 }
-
 
 void Prophet::on_device_destroyed(const DeviceCreatedEvent &e)
 {
@@ -386,13 +452,19 @@ void Prophet::on_swapchain_changed(const SwapchainParameterEvent &swap)
 
 	graph.enable_timestamps(true);
 
+	scene_loader.get_scene().add_render_pass_dependencies(graph);
 	graph.bake();
+
+	auto physical_buffers = graph.consume_physical_buffers();
+	graph.install_physical_buffers(std::move(physical_buffers));
 	graph.log();
 }
 
 void Prophet::render_frame(double frame_time, double e)
 {
 	auto &scene = scene_loader.get_scene();
+	scene.update_all_transforms();
+
 	auto q = cam.get_rotation();
 	ubo.invViewMat = inverse(cam.get_view());
 	context.set_camera(cam);
@@ -414,8 +486,6 @@ void Prophet::render_frame(double frame_time, double e)
 	scene.set_render_pass_data(&renderer_suite, &context);
 	scene.bind_render_graph_resources(graph);
 	renderer_suite.update_mesh_rendering_options(context, renderer_suite_config);
-
-	scene.update_all_transforms();
 
 	TaskComposer composer(*GRANITE_THREAD_GROUP());
 	graph.enqueue_render_passes(device, composer);

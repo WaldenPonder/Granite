@@ -14,6 +14,8 @@
 #include "render_graph.hpp"
 #include "renderer.hpp"
 #include "task_composer.hpp"
+#include "post/temporal.hpp"
+
 #include <fstream>
 
 using namespace muglm;
@@ -128,6 +130,7 @@ private:
 	SceneLoader scene_loader;
 	FlatRenderer flat_renderer;
 	Renderer renderer;
+	Renderer renderer_mv;
 	RenderQueue queue;
 	VisibilityList visible;
 
@@ -142,4 +145,5 @@ private:
 	RenderTextureResource *shadows = nullptr;
 
 	InvResolution inv_resolution;
+	TemporalJitter jitter;
 };

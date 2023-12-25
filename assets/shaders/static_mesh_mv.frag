@@ -16,4 +16,5 @@ void main()
         vec2 oldUV = vOldClip.xy / vOldClip.z;
         MV = 0.5 * (UV - oldUV);
     }
+    MV = vec2(1, 0);
 }
