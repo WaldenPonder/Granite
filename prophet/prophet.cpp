@@ -220,8 +220,6 @@ void Prophet::setup_atmosphere()
 			    renderer.begin(queue);
 			    queue.push_renderables(context, visible.data(), visible.size());
 			    renderer.flush(*cmd, queue, context, 0, nullptr);
-
-			    GRANITE_UI_MANAGER()->render(*cmd);
 		    });
 
 		rayMarching.set_get_clear_color(
@@ -255,6 +253,7 @@ void Prophet::setup_atmosphere()
 	{
 		bool full_mv = false;
 		AttachmentInfo mv;
+		mv.size_class = SwapchainRelative;
 		mv.format = VK_FORMAT_R16G16_SFLOAT;
 
 		mv_pass.set_depth_stencil_input("depth-main");
@@ -272,8 +271,8 @@ void Prophet::setup_atmosphere()
 			    scene.gather_visible_opaque_renderables(context.get_visibility_frustum(), visible);
 			    //scene.gather_visible_motion_vector_renderables(context.get_visibility_frustum(), visible);
 
-				TaskComposer composer(*GRANITE_THREAD_GROUP());
-		    	jitter.step(cam.get_projection(), cam.get_view());
+			    TaskComposer composer(*GRANITE_THREAD_GROUP());
+			    jitter.step(cam.get_projection(), cam.get_view());
 			    context.set_camera(jitter.get_jittered_projection(), cam.get_view());
 			    context.set_motion_vector_projections(jitter);
 			    scene.refresh_per_frame(context, composer);
@@ -282,8 +281,6 @@ void Prophet::setup_atmosphere()
 			    renderer_mv.begin(queue);
 			    queue.push_motion_vector_renderables(context, visible.data(), visible.size());
 			    renderer_mv.flush(*cmd, queue, context, 0, nullptr);
-
-			    GRANITE_UI_MANAGER()->render(*cmd);
 		    });
 
 		mv_pass.set_get_clear_color(
@@ -339,6 +336,8 @@ void Prophet::setup_atmosphere()
 			    CommandBufferUtil::setup_fullscreen_quad(*cmd, "builtin://shaders/quad.vert",
 			                                             "builtin://shaders/fxaa-test.frag", {});
 			    CommandBufferUtil::draw_fullscreen_quad(*cmd);
+
+		    	GRANITE_UI_MANAGER()->render(*cmd);
 		    });
 	}
 	graph.set_backbuffer_source("Final");
@@ -378,6 +377,7 @@ void Prophet::createUi()
 		button->set_text("Import");
 		button->set_font_size(UI::FontSize::Large);
 		button->set_floating_position(vec2(10.0f, 20.f));
+		button->set_font_color(vec4(0, 1, 1, 1));
 	}
 
 	{
@@ -388,6 +388,7 @@ void Prophet::createUi()
 		button->set_text("Test");
 		button->set_font_size(UI::FontSize::Large);
 		button->set_floating_position(vec2(10.0f, 70.f));
+		button->set_font_color(vec4(0, 1, 1, 1));
 	}
 }
 

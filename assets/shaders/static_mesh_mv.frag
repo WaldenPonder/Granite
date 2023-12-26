@@ -8,7 +8,7 @@ void main()
 {
     if (vOldClip.z <= 0.00001)
     {
-        MV = vec2(0.0);
+        MV = vec2(0, 0.0);
     }
     else
     {
@@ -16,5 +16,5 @@ void main()
         vec2 oldUV = vOldClip.xy / vOldClip.z;
         MV = 0.5 * (UV - oldUV);
     }
-    MV = vec2(1, 0);
+    //MV = vec2(1, 0);
 }
