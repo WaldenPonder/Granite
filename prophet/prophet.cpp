@@ -309,6 +309,67 @@ void Prophet::setup_atmosphere()
 		    });
 	}
 
+	//-------------------------------------------------------------------------------taa
+	auto &taa = graph.add_pass("taa-resolve", RENDER_GRAPH_QUEUE_GRAPHICS_BIT);
+	{
+		jitter.init(TemporalJitter::Type::TAA_16Phase,
+		            vec2(graph.get_backbuffer_dimensions().width, graph.get_backbuffer_dimensions().height) *
+		                1.f);
+
+		AttachmentInfo taa_output;
+		taa_output.size_class = SizeClass::InputRelative;
+		taa_output.size_relative_name = "TransmittanceLut";
+		taa_output.format = graph.get_device().image_format_is_supported(VK_FORMAT_B10G11R11_UFLOAT_PACK32,
+		                                                                 VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) ?
+                                VK_FORMAT_B10G11R11_UFLOAT_PACK32 :
+                                VK_FORMAT_R16G16B16A16_SFLOAT;
+
+		AttachmentInfo taa_history = taa_output;
+		taa_history.format = VK_FORMAT_R16G16B16A16_SFLOAT;
+
+		taa.add_color_output("taa-resolve", taa_output);
+		taa.add_color_output( "taa-resolve-history", taa_history);
+		auto &input_res = taa.add_texture_input("TransmittanceLut");
+		auto &input_res_mv = taa.add_texture_input("mv-main");
+		auto &input_depth_res = taa.add_texture_input("depth-main");
+		auto &history = taa.add_history_input( "mv-history");
+
+		taa.set_build_render_pass(
+		    [&, q = Util::ecast(TAAQuality::High)](Vulkan::CommandBuffer &cmd)
+		    {
+			    auto &image = graph.get_physical_texture_resource(input_res);
+			    auto &image_mv = graph.get_physical_texture_resource(input_res_mv);
+			    auto &depth = graph.get_physical_texture_resource(input_depth_res);
+			    auto *prev = graph.get_physical_history_texture_resource(history);
+
+			    struct Push
+			    {
+				    mat4 reproj;
+				    vec4 inv_resolution;
+			    };
+			    Push push;
+
+			    push.reproj = translate(vec3(0.5f, 0.5f, 0.0f)) * scale(vec3(0.5f, 0.5f, 1.0f)) *
+			                  jitter.get_history_view_proj(1) * jitter.get_history_inv_view_proj(0);
+
+			    push.inv_resolution = vec4(
+			        1.0f / image.get_image().get_create_info().width, 1.0f / image.get_image().get_create_info().height,
+			        image.get_image().get_create_info().width, image.get_image().get_create_info().height);
+
+			    cmd.push_constants(&push, 0, sizeof(push));
+
+			    cmd.set_texture(0, 0, image, Vulkan::StockSampler::NearestClamp);
+			    cmd.set_texture(0, 1, depth, Vulkan::StockSampler::NearestClamp);
+			    cmd.set_texture(0, 2, image_mv, Vulkan::StockSampler::NearestClamp);
+			    if (prev)
+				    cmd.set_texture(0, 3, *prev, Vulkan::StockSampler::LinearClamp);
+
+			    Vulkan::CommandBufferUtil::draw_fullscreen_quad(
+			        cmd, "builtin://shaders/quad.vert", "builtin://shaders/post/taa_resolve.frag",
+			        { { "REPROJECTION_HISTORY", prev ? 1 : 0 }, { "TAA_QUALITY", q } });
+		    });
+	}
+#if 0
 	//-------------------------------------------------------------------------------fxaa
 	auto &fxaa = graph.add_pass("Final", RENDER_GRAPH_QUEUE_GRAPHICS_BIT);
 	{
@@ -340,7 +401,8 @@ void Prophet::setup_atmosphere()
 		    	GRANITE_UI_MANAGER()->render(*cmd);
 		    });
 	}
-	graph.set_backbuffer_source("Final");
+#endif
+	graph.set_backbuffer_source("taa-resolve");
 }
 
 void Prophet::createUi()
