@@ -309,7 +309,12 @@ void Prophet::setup_atmosphere()
 		    });
 	}
 
+//#define USE_FXAA
+
+ 
+#ifndef USE_FXAA
 	//-------------------------------------------------------------------------------taa
+
 	auto &taa = graph.add_pass("taa-resolve", RENDER_GRAPH_QUEUE_GRAPHICS_BIT);
 	{
 		jitter.init(TemporalJitter::Type::TAA_16Phase,
@@ -317,8 +322,6 @@ void Prophet::setup_atmosphere()
 		                1.f);
 
 		AttachmentInfo taa_output;
-		taa_output.size_class = SizeClass::InputRelative;
-		taa_output.size_relative_name = "TransmittanceLut";
 		taa_output.format = graph.get_device().image_format_is_supported(VK_FORMAT_B10G11R11_UFLOAT_PACK32,
 		                                                                 VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) ?
                                 VK_FORMAT_B10G11R11_UFLOAT_PACK32 :
@@ -329,10 +332,10 @@ void Prophet::setup_atmosphere()
 
 		taa.add_color_output("taa-resolve", taa_output);
 		taa.add_color_output( "taa-resolve-history", taa_history);
-		auto &input_res = taa.add_texture_input("TransmittanceLut");
+		auto &input_res = taa.add_texture_input("RayMarching");
 		auto &input_res_mv = taa.add_texture_input("mv-main");
 		auto &input_depth_res = taa.add_texture_input("depth-main");
-		auto &history = taa.add_history_input( "mv-history");
+		auto &history = taa.add_history_input( "taa-resolve-history");
 
 		taa.set_build_render_pass(
 		    [&, q = Util::ecast(TAAQuality::High)](Vulkan::CommandBuffer &cmd)
@@ -369,8 +372,12 @@ void Prophet::setup_atmosphere()
 			        { { "REPROJECTION_HISTORY", prev ? 1 : 0 }, { "TAA_QUALITY", q } });
 		    });
 	}
-#if 0
+
+	graph.set_backbuffer_source("taa-resolve");
+
+#else
 	//-------------------------------------------------------------------------------fxaa
+
 	auto &fxaa = graph.add_pass("Final", RENDER_GRAPH_QUEUE_GRAPHICS_BIT);
 	{
 		AttachmentInfo back;
@@ -401,8 +408,8 @@ void Prophet::setup_atmosphere()
 		    	GRANITE_UI_MANAGER()->render(*cmd);
 		    });
 	}
+	graph.set_backbuffer_source("Final");
 #endif
-	graph.set_backbuffer_source("taa-resolve");
 }
 
 void Prophet::createUi()

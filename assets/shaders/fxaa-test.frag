@@ -21,10 +21,10 @@ void main()
 {
     // FragColor = vec4(vUV, 0, 1);
     
-    mediump vec2 texColor2 = textureLod(mvTexture, vUV, 0.0).rg;
-    FragColor = vec4(abs(texColor2), 0, 1);    
+//     mediump vec2 texColor2 = textureLod(mvTexture, vUV, 0.0).rg;
+//     FragColor = vec4(abs(texColor2), 0, 1);    
     
-   return;
+//    return;
     mediump vec3 rgbNW = textureLodOffset(uInput, vUV, 0.0, ivec2(-1, -1)).rgb;
     mediump vec3 rgbNE = textureLodOffset(uInput, vUV, 0.0, ivec2(+1, -1)).rgb;
     mediump vec3 rgbSW = textureLodOffset(uInput, vUV, 0.0, ivec2(-1, +1)).rgb;

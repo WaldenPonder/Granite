@@ -76,6 +76,9 @@ void main()
     mediump vec3 out_color = mix(history_color, current, lerp_factor);
     HistoryColor = out_color;
     Color = TAAToHDRColorSpace(out_color);
+
+   // vec3 aaa = textureLod(MVs, oldUV, 0.0).rgb;
+   // Color = aaa;
 #else
     Color = TAAToHDRColorSpace(current);
     HistoryColor = current;
