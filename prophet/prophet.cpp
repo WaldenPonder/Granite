@@ -259,54 +259,17 @@ void Prophet::setup_atmosphere()
 		mv_pass.set_depth_stencil_input("depth-main");
 		mv_pass.add_color_output("mv-main", mv);
 
+	    auto renderer = Util::make_handle<RenderPassSceneRenderer>();
+		RenderPassSceneRenderer::Setup setup = {};
+		setup.scene = &scene_loader.get_scene();
+		setup.context = &context;
+		setup.suite = &renderer_suite;
+		setup.flags = SCENE_RENDERER_MOTION_VECTOR_BIT;
 		if (full_mv)
-			mv_pass.add_attachment_input("depth-main");
+			setup.flags |= SCENE_RENDERER_MOTION_VECTOR_FULL_BIT;
+		renderer->init(setup);
 
-		mv_pass.set_build_render_pass(
-		    [&](CommandBuffer &cmd_buffer)
-		    {
-			    auto *cmd = &cmd_buffer;
-			    // Simple forward renderer, so we render opaque, transparent and background renderables in one go.
-			    visible.clear();
-			    scene.gather_visible_opaque_renderables(context.get_visibility_frustum(), visible);
-			    //scene.gather_visible_motion_vector_renderables(context.get_visibility_frustum(), visible);
-
-			    TaskComposer composer(*GRANITE_THREAD_GROUP());
-			    jitter.step(cam.get_projection(), cam.get_view());
-			    context.set_camera(jitter.get_jittered_projection(), cam.get_view());
-			    context.set_motion_vector_projections(jitter);
-			    scene.refresh_per_frame(context, composer);
-
-			    // Time to render.
-			    renderer_mv.begin(queue);
-			    queue.push_motion_vector_renderables(context, visible.data(), visible.size());
-			    renderer_mv.flush(*cmd, queue, context, 0, nullptr);
-		    });
-
-		mv_pass.set_get_clear_color(
-		    [](unsigned, VkClearColorValue *value) -> bool
-		    {
-			    if (value)
-			    {
-				    value->float32[0] = 0.0f;
-				    value->float32[1] = 0.0f;
-				    value->float32[2] = 0.0f;
-				    value->float32[3] = 0.0f;
-			    }
-
-			    return true;
-		    });
-
-		mv_pass.set_get_clear_depth_stencil(
-		    [](VkClearDepthStencilValue *value) -> bool
-		    {
-			    if (value)
-			    {
-				    value->depth = 1.0f;
-				    value->stencil = 0;
-			    }
-			    return true;
-		    });
+		mv_pass.set_render_pass_interface(std::move(renderer));
 	}
 
 //#define USE_FXAA
@@ -544,6 +507,10 @@ void Prophet::render_frame(double frame_time, double e)
 	frame.elapsed_time = elapsed_time;
 	frame.frame_time = frame_time;
 	context.set_frame_parameters(frame);
+
+	jitter.step(cam.get_projection(), cam.get_view());
+	context.set_camera(jitter.get_jittered_projection(), cam.get_view());
+	context.set_motion_vector_projections(jitter);
 
 	renderer.set_mesh_renderer_options_from_lighting(lighting);
 

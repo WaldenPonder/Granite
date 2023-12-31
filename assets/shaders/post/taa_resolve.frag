@@ -77,8 +77,8 @@ void main()
     HistoryColor = out_color;
     Color = TAAToHDRColorSpace(out_color);
 
-   // vec3 aaa = textureLod(MVs, oldUV, 0.0).rgb;
-   // Color = aaa;
+    //vec2 aaa = textureLod(MVs, vUV, 0.0).rg;
+    //Color = vec3(10000 * abs(aaa), 0);
 #else
     Color = TAAToHDRColorSpace(current);
     HistoryColor = current;
