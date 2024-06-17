@@ -103,7 +103,7 @@ bool Trackball::on_input_state(const InputStateEvent &state)
 	else if (state.get_key_pressed(Key::A))
 		position -= accelerate * FACTOR * get_right() * static_cast<float>(state.get_delta_time());
 
-	position.z = max(2.0f, position.z);
+	//position.z = max(2.0f, position.z);
 
 	float dx = 0.0f;
 

@@ -51,7 +51,7 @@ struct MDIApplication : Application, EventHandler
 	void on_swapchain_created(const SwapchainParameterEvent &e)
 	{
 		//cam.set_ortho(true);
-		cam.look_at(vec3(0.0f, 0.0f, -5.0f), vec3(0.0f, 0.f, 0.f), vec3(0, -1, 0));
+		cam.look_at(vec3(0.0f, 0.0f, -5000.0f), vec3(0.0f, 0.f, 0.f), vec3(0, 0, 1));
 		cam.set_aspect(e.get_aspect_ratio());
 		cam.set_fovy(0.6f * half_pi<float>());
 		cam.set_depth_range(0.05f, 100000.0f);

@@ -337,7 +337,7 @@ void load_scene(Device &device)
 
 	//-----------------------------------------------------------------PushObject
 	{
-#if 1// _DEBUG
+#if 0// _DEBUG
 		Chunk &line_chunk = *get_current_chunk(device, VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
 
 		MeshId line1;
@@ -435,9 +435,10 @@ void load_scene(Device &device)
 			{
 				vector<vec4> positions(3);
 				int i = 0;
-				positions[i++] = vec4(-0.5, -1, 0.2, 1);
-				positions[i++] = vec4(-1, 0, 0.2, 1);
-				positions[i++] = vec4(0., 0, 0.2, 1);
+				float sz = 13.5;
+				positions[i++] = vec4(-0.5, -1, 0.2, 1) * sz;
+				positions[i++] = vec4(-1, 0, 0.2, 1) * sz;
+				positions[i++] = vec4(0., 0, 0.2, 1) * sz;
 
 				i = 0;
 				vector<int> indices(3);
@@ -450,7 +451,7 @@ void load_scene(Device &device)
 			{
 				vector<vec4> positions(4);
 				int i = 0;
-				float sz = 0.8;
+				float sz = 12.8;
 				positions[i++] = vec4(0, -1 * sz, 0.3, 1);
 				positions[i++] = vec4(0, 0, 0.3, 1);
 				positions[i++] = vec4(1 * sz, 0, 0.3, 1);
@@ -470,9 +471,10 @@ void load_scene(Device &device)
 			{
 				vector<vec4> positions(3);
 				int i = 0;
-				positions[i++] = vec4(-0.2, .8, 0, 1) + vec4(-.5, 0, 0.1, 0);
-				positions[i++] = vec4(.2, 0.8, 0, 1) + vec4(-.5, 0, 0.1, 0);
-				positions[i++] = vec4(0, 0.2, 0, 1) + vec4(-.5, 0, 0.1, 0);
+				float sz = 13.5;
+				positions[i++] = vec4(-0.2, .8, 0, 1) * sz + vec4(-.5, 0, 0.1, 0);
+				positions[i++] = vec4(.2, 0.8, 0, 1) * sz + vec4(-.5, 0, 0.1, 0);
+				positions[i++] = vec4(0, 0.2, 0, 1) * sz + vec4(-.5, 0, 0.1, 0);
 
 				i = 0;
 				vector<int> indices(3);
