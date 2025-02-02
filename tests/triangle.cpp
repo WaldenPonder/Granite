@@ -62,6 +62,7 @@ struct TriangleApplication : Granite::Application, Granite::EventHandler
 			vec4(0.0f, 0.0f, 1.0f, 1.0f),
 		};
 
+
 		auto *verts = static_cast<vec2 *>(cmd->allocate_vertex_data(0, sizeof(vertices), sizeof(vec2)));
 		auto *col = static_cast<vec4 *>(cmd->allocate_vertex_data(1, sizeof(colors), sizeof(vec4)));
 		memcpy(verts, vertices, sizeof(vertices));
